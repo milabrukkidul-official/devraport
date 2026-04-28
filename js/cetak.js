@@ -9,12 +9,12 @@ async function loadCetakData() {
   try {
     // Ambil semua data paralel, termasuk info kelas dari daftar kelas
     const [settingRes, siswaRes, nilaiRes, kkmRes, ekskulRes, kelasRes] = await Promise.all([
-      API.call('getSetting', { kelasId }),
+      API.call('getSetting'),
       API.call('getSiswa',   { kelasId }),
       API.call('getNilai',   { kelasId }),
       API.call('getKKM',     { kelasId }),
       API.call('getEkskul',  { kelasId }),
-      API.call('getKelasPublic'),           // ambil daftar kelas untuk namaKelas & namaWali
+      API.call('getKelasPublic'),
     ]);
 
     // Cari data kelas yang sesuai dengan kelasId user

@@ -50,6 +50,8 @@
     </div>
     <div class="tab-bar">
       <button class="tab-btn active" onclick="adminTab('kelas', this)">🏫 Kelola Kelas</button>
+      <button class="tab-btn" onclick="adminTab('rombel', this)">📦 Rombel</button>
+      <button class="tab-btn" onclick="adminTab('mapel', this)">📚 Kelola Mapel</button>
       <button class="tab-btn" onclick="adminTab('user', this)">👥 Kelola User</button>
       <button class="tab-btn" onclick="adminTab('gasurl', this)">🔗 URL Apps Script</button>
     </div>
@@ -68,6 +70,55 @@
           <thead><tr><th>No</th><th>ID Kelas</th><th>Nama Kelas</th><th>Wali Kelas</th><th>Semester</th><th>Tahun Pelajaran</th><th>Aksi</th></tr></thead>
           <tbody id="bodyKelas"></tbody>
         </table>
+      </div>
+    </div>
+
+    <!-- Tab Rombel -->
+    <div id="adminTab-rombel" class="tab-content">
+      <div class="page-header" style="margin-top:16px;">
+        <h3>📦 Rombongan Belajar (Rombel)</h3>
+        <button class="btn-success" onclick="modalRombel()">➕ Tambah Rombel</button>
+      </div>
+      <div class="info-box" style="margin-bottom:14px;">
+        <p style="font-size:0.85rem;">Rombel adalah grup kelas yang berbagi daftar mata pelajaran yang sama. Contoh: Rombel "Kelas 1" berisi kelas 1A, 1B, 1C — semua berbagi mapel yang sama. Rombel "Kelas 2" punya mapel berbeda.</p>
+      </div>
+      <div class="table-wrapper">
+        <table>
+          <thead><tr><th>No</th><th>ID Rombel</th><th>Nama Rombel</th><th>Jumlah Mapel</th><th>Aksi</th></tr></thead>
+          <tbody id="bodyRombel"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Tab Mapel -->
+    <div id="adminTab-mapel" class="tab-content">
+      <div class="page-header" style="margin-top:16px;">
+        <h3>📚 Kelola Mata Pelajaran per Kelas</h3>
+      </div>
+      <div class="info-box" style="margin-bottom:14px;">
+        <p style="font-size:0.85rem;">Pilih kelas, lalu atur daftar mata pelajaran. Setiap kelas bisa punya mapel yang berbeda. Kelas dengan jenjang sama (misal 1A, 1B, 1C) bisa disalin dari satu kelas ke kelas lain.</p>
+      </div>
+      <div style="display:flex;gap:12px;align-items:flex-end;flex-wrap:wrap;margin-bottom:16px;">
+        <div class="form-group" style="min-width:200px;">
+          <label>Pilih Kelas</label>
+          <select id="mapelKelasSelect" onchange="loadMapelAdmin()">
+            <option value="">-- Pilih Kelas --</option>
+          </select>
+        </div>
+        <div class="form-group" style="min-width:200px;">
+          <label>Terapkan dari Rombel</label>
+          <select id="mapelRombelSelect">
+            <option value="">-- Pilih Rombel --</option>
+          </select>
+        </div>
+        <button class="btn-warning" onclick="terapkanRombelKeKelas()">↩ Terapkan Rombel</button>
+        <button class="btn-primary" onclick="loadMapelAdmin()">🔄 Muat</button>
+        <button class="btn-success" onclick="tambahMapelAdmin()">➕ Tambah Mapel</button>
+        <button class="btn-warning" onclick="modalSalinMapel()">📋 Salin ke Kelas Lain</button>
+        <button class="btn-success" onclick="saveMapelAdmin()">💾 Simpan</button>
+      </div>
+      <div id="mapelAdminContainer" class="table-wrapper">
+        <p class="hint">Pilih kelas untuk menampilkan daftar mata pelajaran.</p>
       </div>
     </div>
 
@@ -117,22 +168,17 @@
     </div>
   </div>
 
-  <!-- ===== SETTING KELAS ===== -->
+  <!-- ===== SETTING GLOBAL ===== -->
   <div id="page-setting" class="page">
-    <div id="adminKelasBar-setting" class="admin-kelas-bar hidden">
-      <label>🏫 Kelas:</label>
-      <select id="adminKelasSelect-setting" onchange="loadSetting()"></select>
-    </div>
     <div class="page-header">
-      <h2>⚙️ Setting Kelas: <span id="settingKelasLabel"></span></h2>
+      <h2>⚙️ Setting Madrasah</h2>
       <div class="btn-group">
         <button class="btn-primary" onclick="loadSetting()">🔄 Muat</button>
         <button class="btn-success" onclick="saveSetting()">💾 Simpan</button>
       </div>
     </div>
     <p style="font-size:0.83rem;color:#6b7280;margin-bottom:14px;">
-      💡 Nama Kelas dan Nama Wali Kelas diambil otomatis dari data kelas yang dibuat Admin.
-      Setting ini tersimpan otomatis saat Anda mengubah isian.
+      💡 Setting ini berlaku untuk <strong>semua kelas</strong>. Tersimpan otomatis saat Anda mengubah isian.
     </p>
     <div class="form-grid">
       <div class="form-group full">
@@ -211,7 +257,6 @@
       <h2>📊 Rekap Nilai</h2>
       <div class="btn-group">
         <button class="btn-primary" onclick="loadNilai()">🔄 Muat</button>
-        <button class="btn-warning" onclick="tambahMapel()">➕ Tambah Mapel</button>
         <button class="btn-warning" onclick="showModalUploadNilai()">📤 Upload Excel</button>
         <a class="btn-warning" style="padding:7px 14px;border-radius:6px;font-size:0.83rem;font-weight:600;text-decoration:none;cursor:pointer;" onclick="downloadTemplateNilai()">📥 Template .xlsx</a>
         <button class="btn-success" onclick="saveNilai()">💾 Simpan</button>
@@ -417,6 +462,54 @@
     <div class="modal-actions">
       <button class="btn-success" onclick="simpanResetPassword()">🔑 Reset Password</button>
       <button class="btn-danger" onclick="closeModal('modalResetPass')">✖ Batal</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Rombel -->
+<div id="modalRombel" class="modal hidden">
+  <div class="modal-content" style="max-width:560px;">
+    <h3 id="modalRombelTitle">Tambah Rombel</h3>
+    <input type="hidden" id="mr_id_hidden"/>
+    <div class="form-grid">
+      <div class="form-group">
+        <label>ID Rombel <small style="color:#888;">(unik, tanpa spasi)</small></label>
+        <input type="text" id="mr_id" placeholder="rombel_1"/>
+      </div>
+      <div class="form-group">
+        <label>Nama Rombel</label>
+        <input type="text" id="mr_nama" placeholder="Kelas 1"/>
+      </div>
+    </div>
+    <div style="margin-top:14px;">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+        <label style="font-weight:600;font-size:0.85rem;">Daftar Mata Pelajaran</label>
+        <button class="btn-success" onclick="tambahMapelRombel()" style="padding:4px 10px;font-size:0.8rem;">➕ Tambah</button>
+      </div>
+      <div id="rombelMapelList" style="display:flex;flex-direction:column;gap:6px;max-height:260px;overflow-y:auto;padding:4px;"></div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn-success" onclick="simpanRombel()">💾 Simpan</button>
+      <button class="btn-danger"  onclick="closeModal('modalRombel')">✖ Batal</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Salin Mapel -->
+<div id="modalSalinMapel" class="modal hidden">
+  <div class="modal-content" style="max-width:480px;">
+    <h3>📋 Salin Mapel ke Kelas Lain</h3>
+    <p style="font-size:0.85rem;color:#555;margin-bottom:16px;">
+      Salin daftar mata pelajaran dari kelas <strong id="salinDariLabel"></strong> ke kelas yang dipilih di bawah.
+    </p>
+    <div class="form-group" style="margin-bottom:8px;">
+      <label>Salin ke kelas:</label>
+      <div id="salinKelasCheckboxes" style="display:flex;flex-direction:column;gap:6px;max-height:220px;overflow-y:auto;padding:8px;border:1px solid #e5e7eb;border-radius:6px;background:#f9fafb;"></div>
+    </div>
+    <p id="salinError" style="color:#dc2626;font-size:0.83rem;margin-top:4px;"></p>
+    <div class="modal-actions">
+      <button class="btn-success" onclick="eksekusiSalinMapel()">📋 Salin</button>
+      <button class="btn-danger"  onclick="closeModal('modalSalinMapel')">✖ Batal</button>
     </div>
   </div>
 </div>

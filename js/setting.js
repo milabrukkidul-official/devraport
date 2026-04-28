@@ -1,19 +1,11 @@
-// ===== SETTING (per kelas) =====
-// namaKelas & namaWali diambil otomatis dari data kelas — tidak ada di form ini
+// ===== SETTING GLOBAL =====
+// Setting berlaku untuk semua kelas — tidak ada pilihan kelas
 
 let settingAutoSaveTimer = null;
 
-function getKelasId() {
-  return getActiveKelasId('setting');
-}
-
 async function loadSetting() {
-  const kelasId = getKelasId();
-  if (!kelasId && currentUser?.role !== 'admin') {
-    showToast('Tidak ada kelas yang dipilih.', 'error'); return;
-  }
   try {
-    const data = await API.call('getSetting', { kelasId });
+    const data = await API.call('getSetting');
     const s = data.setting || {};
     document.getElementById('s_urlKop').value         = s.urlKop || '';
     document.getElementById('s_namaSatuan').value     = s.namaSatuan || '';
@@ -23,16 +15,14 @@ async function loadSetting() {
     document.getElementById('s_judul').value          = s.judul || 'LAPORAN HASIL BELAJAR SISWA';
     document.getElementById('s_tempatRapor').value    = s.tempatRapor || '';
     document.getElementById('s_tglRapor').value       = s.tglRapor || '';
-    document.getElementById('settingKelasLabel').textContent = kelasId || '(semua)';
     showToast('Setting dimuat!', 'success');
   } catch(e) {}
 }
 
 async function saveSetting() {
-  const kelasId = getKelasId();
   const setting = buildSettingObj();
   try {
-    await API.post('saveSetting', { kelasId, setting: JSON.stringify(setting) });
+    await API.post('saveSetting', { setting: JSON.stringify(setting) });
     showToast('Setting disimpan!', 'success');
   } catch(e) {}
 }
@@ -50,16 +40,13 @@ function buildSettingObj() {
   };
 }
 
-// Auto-save: simpan otomatis 1.5 detik setelah user berhenti mengetik
+// Auto-save 1.5 detik setelah berhenti mengetik
 function settingChanged() {
   clearTimeout(settingAutoSaveTimer);
   settingAutoSaveTimer = setTimeout(async () => {
-    const kelasId = getKelasId();
-    if (!kelasId && currentUser?.role !== 'admin') return;
     const setting = buildSettingObj();
     try {
-      await API.post('saveSetting', { kelasId, setting: JSON.stringify(setting) });
-      // Toast kecil tanpa mengganggu
+      await API.post('saveSetting', { setting: JSON.stringify(setting) });
       const t = document.getElementById('toast');
       t.textContent = '💾 Tersimpan otomatis';
       t.className = 'toast success';
@@ -70,12 +57,10 @@ function settingChanged() {
   }, 1500);
 }
 
-// Pasang event listener auto-save setelah DOM siap
 document.addEventListener('DOMContentLoaded', () => {
-  const ids = ['s_urlKop','s_namaSatuan','s_namaKepala',
-               's_semester','s_tahunPelajaran','s_judul',
-               's_tempatRapor','s_tglRapor'];
-  ids.forEach(id => {
+  ['s_urlKop','s_namaSatuan','s_namaKepala','s_semester',
+   's_tahunPelajaran','s_judul','s_tempatRapor','s_tglRapor']
+  .forEach(id => {
     const el = document.getElementById(id);
     if (el) {
       el.addEventListener('input',  settingChanged);

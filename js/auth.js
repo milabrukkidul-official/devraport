@@ -66,9 +66,10 @@ function showMainApp() {
       st.className = 'conn-status ok';
     }
     loadAdminData();
-  } else if (currentUser.role === 'walikelas') {
-    showPage('setting');
     loadSetting();
+  } else if (currentUser.role === 'walikelas') {
+    showPage('siswa');
+    loadSiswa();
   } else {
     showPage('nilai');
     loadNilai();
@@ -90,7 +91,6 @@ function buildNavbar() {
     pages.push({ id: 'kkm',     label: '📌 KKM' });
     pages.push({ id: 'cetak',   label: '🖨️ Cetak' });
   } else if (role === 'walikelas') {
-    pages.push({ id: 'setting', label: '⚙️ Setting' });
     pages.push({ id: 'siswa',   label: '👤 Siswa' });
     pages.push({ id: 'nilai',   label: '📊 Nilai' });
     pages.push({ id: 'ekskul',  label: '🏆 Ekskul' });
