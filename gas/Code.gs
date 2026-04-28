@@ -178,19 +178,47 @@ function saveKelas_(body) {
   for (let i = 1; i < data.length; i++) {
     if (String(data[i][0]) === k.id) { found = i + 1; break; }
   }
+
+  // Jika edit kelas dan wali berubah, lepas kelasId dari wali lama
+  if (found > 0) {
+    const waliLama = String(data[found-1][2] || '');
+    if (waliLama && waliLama !== k.wali) {
+      updateKelasIdUser_(waliLama, ''); // lepas kelas dari wali lama
+    }
+  }
+
   const row = [k.id, k.nama, k.wali, k.semester, k.tahun, waliNama];
   if (found > 0) {
     sh.getRange(found, 1, 1, 6).setValues([row]);
   } else {
     sh.appendRow(row);
     // Inisialisasi setting default untuk kelas baru
-    initSettingKelas_(k.id, k.nama, k.semester, k.tahun);
+    initSettingKelas_(k.id, k.semester, k.tahun);
   }
+
+  // Simpan kelasId ke user wali kelas yang baru dipilih
+  if (k.wali) {
+    updateKelasIdUser_(k.wali, k.id);
+  }
+
   return { success: true };
 }
 
+// Update kolom kelasId di _USERS untuk username tertentu
+function updateKelasIdUser_(username, kelasId) {
+  if (!username) return;
+  const sh   = getSheet(SH_USERS);
+  const data = sh.getDataRange().getValues();
+  for (let i = 1; i < data.length; i++) {
+    if (String(data[i][0]) === username) {
+      sh.getRange(i + 1, 5).setValue(kelasId); // kolom 5 = kelasId
+      break;
+    }
+  }
+}
+
 // Inisialisasi setting default saat kelas baru dibuat
-function initSettingKelas_(kelasId, namaKelas, semester, tahun) {
+function initSettingKelas_(kelasId, semester, tahun) {
   const sh = getSheet(shName(kelasId, 'SETTING'));
   if (sh.getLastRow() === 0) {
     const defaults = [
@@ -247,31 +275,26 @@ function saveUser_(body) {
   for (let i = 1; i < data.length; i++) {
     if (String(data[i][0]) === u.username) { found = i + 1; break; }
   }
+
+  // Pertahankan password lama jika kosong (edit)
   let password = u.password;
   if (!isNew && !password && found > 0) password = String(data[found-1][1]);
-  const row = [u.username, password, u.nama, u.role, u.kelasId || ''];
+
+  // Pertahankan kelasId lama — kelasId HANYA diubah lewat saveKelas, bukan dari sini
+  let kelasId = '';
+  if (!isNew && found > 0) {
+    kelasId = String(data[found-1][4] || ''); // kolom 5 = kelasId
+  }
+
+  const row = [u.username, password, u.nama, u.role, kelasId];
   if (found > 0) {
     sh.getRange(found, 1, 1, 5).setValues([row]);
   } else {
     sh.appendRow(row);
   }
-  // Update waliNama di _KELAS jika user ini adalah wali kelas
-  if (u.kelasId && (u.role === 'walikelas')) {
-    updateWaliNamaKelas_(u.kelasId, u.nama);
-  }
   return { success: true };
 }
 
-function updateWaliNamaKelas_(kelasId, waliNama) {
-  const sh   = getSheet(SH_KELAS);
-  const data = sh.getDataRange().getValues();
-  for (let i = 1; i < data.length; i++) {
-    if (String(data[i][0]) === kelasId) {
-      sh.getRange(i + 1, 6).setValue(waliNama); // kolom 6 = waliNama
-      break;
-    }
-  }
-}
 
 function deleteUser_(body) {
   const username = body.username;
