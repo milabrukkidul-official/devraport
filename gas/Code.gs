@@ -79,6 +79,8 @@ function canAccessRombel(token, rombelId) {
   const u = verifyToken(token);
   if (!u) return false;
   if (u.role === 'admin') return true;
+  // Debug: log untuk melihat apakah rombelId cocok
+  Logger.log('canAccessRombel - user.rombelId: ' + u.rombelId + ', requested rombelId: ' + rombelId);
   return u.rombelId === rombelId;
 }
 
@@ -171,7 +173,11 @@ function requireAdmin(token, fn) {
   return fn();
 }
 function requireRombel(token, rombelId, fn) {
-  if (!canAccessRombel(token, rombelId)) return { error: 'Akses ditolak.' };
+  const u = verifyToken(token);
+  if (!u) return { error: 'Akses ditolak. Token tidak valid.' };
+  if (!canAccessRombel(token, rombelId)) {
+    return { error: `Akses ditolak. User ${u.username} (${u.role}) tidak bisa akses rombel ${rombelId}. RombelId user: ${u.rombelId}` };
+  }
   return fn();
 }
 function requireNilai(token, rombelId, fn) {

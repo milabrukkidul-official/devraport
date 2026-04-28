@@ -14,10 +14,17 @@ async function loadSiswa() {
   if (!rombelId) { showToast('Pilih rombel terlebih dahulu!', 'error'); return; }
   try {
     const data = await API.call('getSiswa', { kelasId: rombelId });
+    if (data.error) {
+      showToast('Error: ' + data.error, 'error');
+      return;
+    }
     siswaCacheList = data.siswa || [];
     renderTabelSiswa(siswaCacheList);
     showToast('Data siswa dimuat!', 'success');
-  } catch(e) {}
+  } catch(e) {
+    showToast('Error memuat data siswa: ' + e.message, 'error');
+    console.error('Error loadSiswa:', e);
+  }
 }
 
 function renderTabelSiswa(list) {
