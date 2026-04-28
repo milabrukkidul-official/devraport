@@ -2,10 +2,11 @@
 
 function showPage(name) {
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
-  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
-  document.getElementById('page-' + name).classList.add('active');
-  const btns = document.querySelectorAll('.nav-btn');
-  btns.forEach(b => { if (b.getAttribute('onclick')?.includes(name)) b.classList.add('active'); });
+  document.querySelectorAll('.nav-btn[data-page]').forEach(b => b.classList.remove('active'));
+  const pg = document.getElementById('page-' + name);
+  if (pg) pg.classList.add('active');
+  const btn = document.querySelector(`.nav-btn[data-page="${name}"]`);
+  if (btn) btn.classList.add('active');
 }
 
 function showLoading(show) {
@@ -16,7 +17,9 @@ function showToast(msg, type = 'info') {
   const t = document.getElementById('toast');
   t.textContent = msg;
   t.className = 'toast ' + type;
-  setTimeout(() => t.classList.add('hidden'), 3000);
+  t.classList.remove('hidden');
+  clearTimeout(t._timer);
+  t._timer = setTimeout(() => t.classList.add('hidden'), 3200);
 }
 
 function closeModal(id) {
@@ -24,27 +27,18 @@ function closeModal(id) {
 }
 
 function saveGasUrl() {
-  const url = document.getElementById('gasUrl').value.trim();
+  const url = document.getElementById('adminGasUrl').value.trim();
   if (!url) { showToast('Masukkan URL terlebih dahulu', 'error'); return; }
   localStorage.setItem('gasUrl', url);
   const st = document.getElementById('connStatus');
   st.textContent = '✅ Tersimpan';
   st.className = 'conn-status ok';
   showToast('URL berhasil disimpan!', 'success');
+  // Reload kelas di login
+  loadKelasLogin();
 }
 
-// Load saved URL on startup
-window.addEventListener('DOMContentLoaded', () => {
-  const saved = localStorage.getItem('gasUrl');
-  if (saved) {
-    document.getElementById('gasUrl').value = saved;
-    const st = document.getElementById('connStatus');
-    st.textContent = '✅ Terhubung';
-    st.className = 'conn-status ok';
-  }
-});
-
-// Helper: format tanggal Indonesia
+// ===== HELPERS =====
 function formatTanggal(dateStr) {
   if (!dateStr) return '';
   const bulan = ['Januari','Februari','Maret','April','Mei','Juni',
@@ -54,19 +48,39 @@ function formatTanggal(dateStr) {
   return `${d.getDate()} ${bulan[d.getMonth()]} ${d.getFullYear()}`;
 }
 
-// Helper: hitung predikat berdasarkan nilai dan KKM
 function hitungPredikat(nilai, kkm) {
   nilai = parseFloat(nilai);
   kkm   = parseFloat(kkm) || 70;
-  if (isNaN(nilai)) return '-';
-  if (nilai >= 90) return 'A';
-  if (nilai >= kkm) return 'B';
-  if (nilai >= 60) return 'C';
+  if (isNaN(nilai) || nilai === '') return '-';
+  if (nilai >= 90)   return 'A';
+  if (nilai >= kkm)  return 'B';
+  if (nilai >= 60)   return 'C';
   return 'D';
 }
 
 function deskripsiPredikat(predikat, panggilan, mapel) {
-  const map = { A: 'sangat baik', B: 'baik', C: 'cukup', D: 'perlu bimbingan' };
-  const ket = map[predikat] || 'cukup';
-  return `Ananda ${panggilan} ${predikat === 'A' ? 'sangat baik' : predikat === 'B' ? 'baik' : predikat === 'C' ? 'cukup' : 'perlu bimbingan'} dalam memahami pelajaran ${mapel}.`;
+  const ket = { A: 'sangat baik', B: 'baik', C: 'cukup', D: 'perlu bimbingan' };
+  return `Ananda ${panggilan} ${ket[predikat] || 'cukup'} dalam memahami pelajaran ${mapel}.`;
 }
+
+function adminTab(name) {
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+  document.getElementById('adminTab-' + name).classList.add('active');
+  event.target.classList.add('active');
+}
+
+// Preview KOP
+document.addEventListener('DOMContentLoaded', () => {
+  const inp = document.getElementById('s_urlKop');
+  if (inp) {
+    inp.addEventListener('blur', () => {
+      const prev = document.getElementById('kopPreview');
+      if (!prev) return;
+      const url = inp.value.trim();
+      prev.innerHTML = url
+        ? `<img src="${url}" style="max-height:80px;max-width:300px;border:1px solid #ddd;border-radius:4px;" onerror="this.style.display='none'" />`
+        : '';
+    });
+  }
+});

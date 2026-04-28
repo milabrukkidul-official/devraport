@@ -1,6 +1,6 @@
-# 📋 Aplikasi Rapor Digital
+# 📋 Rapor Digital — Multi-Kelas + Auth
 
-Aplikasi rapor berbasis web yang menggunakan **Google Spreadsheet** sebagai database dan dapat di-host di **GitHub Pages**.
+Aplikasi rapor berbasis web dengan Google Spreadsheet sebagai database, sistem login multi-role, dan cetak A4.
 
 ---
 
@@ -8,92 +8,94 @@ Aplikasi rapor berbasis web yang menggunakan **Google Spreadsheet** sebagai data
 
 ```
 rapor-digital/
-├── index.html          ← Halaman utama aplikasi
+├── index.html
 ├── css/
-│   └── style.css       ← Styling
+│   ├── style.css       ← Styling utama
+│   └── print.css       ← Styling cetak A4
 ├── js/
-│   ├── api.js          ← Komunikasi ke Google Apps Script
-│   ├── app.js          ← Fungsi inti & helper
-│   ├── setting.js      ← Halaman Setting
-│   ├── siswa.js        ← Data Siswa
-│   ├── nilai.js        ← Rekap Nilai
-│   ├── ekskul.js       ← Ekstrakurikuler
-│   ├── kkm.js          ← KKM
-│   └── cetak.js        ← Cetak Rapor
+│   ├── api.js          ← Komunikasi GAS
+│   ├── app.js          ← Fungsi inti
+│   ├── auth.js         ← Login / logout / session
+│   ├── admin.js        ← Panel admin (kelas & user)
+│   ├── setting.js      ← Setting per kelas
+│   ├── siswa.js        ← Data siswa per kelas
+│   ├── nilai.js        ← Rekap nilai per kelas
+│   ├── ekskul.js       ← Ekskul per kelas
+│   ├── kkm.js          ← KKM per kelas
+│   └── cetak.js        ← Cetak rapor A4
 └── gas/
-    └── Code.gs         ← Google Apps Script (backend)
+    └── Code.gs         ← Backend Google Apps Script
 ```
 
 ---
 
 ## 🚀 Cara Setup
 
-### Langkah 1 — Buat Google Spreadsheet
+### 1. Google Apps Script
+1. Buka Google Sheets → **Extensions → Apps Script**
+2. Hapus kode default, paste isi `gas/Code.gs`
+3. Jalankan fungsi `setupSheets()` **sekali** (akan membuat sheet `_USERS` dan `_KELAS`)
+4. **Deploy → New Deployment → Web App**
+   - Execute as: **Me**
+   - Who has access: **Anyone**
+5. Copy URL Web App
 
-1. Buka [Google Sheets](https://sheets.google.com) dan buat spreadsheet baru.
-2. Buka **Extensions → Apps Script**.
-3. Hapus kode default, paste seluruh isi file `gas/Code.gs`.
-4. Klik **Save**, lalu jalankan fungsi `setupSheets` sekali untuk membuat semua sheet otomatis.
+### 2. GitHub Pages
+1. Upload semua file ke repository GitHub
+2. Settings → Pages → Source: main branch
+3. Akses di `https://username.github.io/nama-repo/`
 
-### Langkah 2 — Deploy Web App
-
-1. Di Apps Script, klik **Deploy → New Deployment**.
-2. Pilih type: **Web App**.
-3. Isi deskripsi (bebas).
-4. **Execute as**: Me
-5. **Who has access**: Anyone
-6. Klik **Deploy**, copy URL Web App yang muncul.
-
-### Langkah 3 — Host di GitHub Pages
-
-1. Upload semua file ke repository GitHub.
-2. Aktifkan **GitHub Pages** di Settings → Pages → Source: main branch.
-3. Akses aplikasi di `https://username.github.io/nama-repo/`.
-
-### Langkah 4 — Hubungkan ke Spreadsheet
-
-1. Buka aplikasi di browser.
-2. Di halaman **Beranda**, paste URL Web App dari langkah 2.
-3. Klik **Simpan & Hubungkan**.
+### 3. Konfigurasi Awal
+1. Buka aplikasi → Login dengan `admin` / `admin123`
+2. Masuk ke **Admin → URL Apps Script** → paste URL → Simpan
+3. Buat kelas di **Admin → Kelola Kelas**
+4. Buat user wali kelas / guru mapel di **Admin → Kelola User**
 
 ---
 
-## 📋 Sheet yang Dibuat Otomatis
+## 👥 Sistem Role
 
-| Sheet | Isi |
-|-------|-----|
-| **SETTING** | Konfigurasi madrasah, kelas, wali kelas, dll |
-| **DATA SISWA** | NISN, No. Induk, Nama, TTL, Ortu, Pesan |
-| **REKAP NILAI** | Nilai per mata pelajaran + kehadiran |
-| **KKM** | Kriteria Ketuntasan Minimal per mapel |
-| **EKSTRAKURIKULER** | Nilai kegiatan ekskul per siswa |
+| Role | Akses |
+|------|-------|
+| **Admin** | Semua fitur + kelola kelas & user |
+| **Wali Kelas** | Setting, Siswa, Nilai, Ekskul, KKM, Cetak (kelas sendiri) |
+| **Guru Mapel** | Hanya Rekap Nilai (kelas yang ditugaskan) |
 
 ---
 
-## 🖨️ Cara Cetak Rapor
+## 🏫 Multi-Kelas
 
-1. Isi semua data (Setting, Siswa, Nilai, KKM).
-2. Buka menu **Cetak Rapor**.
-3. Klik **Muat Data**.
-4. Pilih nama siswa dari dropdown.
-5. Klik **Print** atau `Ctrl+P`.
+- Setiap kelas memiliki sheet terpisah di Spreadsheet: `kelasId_SETTING`, `kelasId_SISWA`, dll.
+- Data antar kelas **tidak saling mempengaruhi**
+- Admin bisa melihat dan mengelola semua kelas
+- Wali kelas hanya bisa akses kelas yang ditugaskan
+
+---
+
+## 🖨️ Cetak A4
+
+- Layout otomatis menyesuaikan kertas A4 portrait
+- Margin minimum (8mm atas/bawah, 10mm kiri/kanan)
+- KOP gambar maksimal 1000×300px
+- Semua elemen UI tersembunyi saat print
+- Gunakan **Ctrl+P** atau tombol Print di aplikasi
 
 ---
 
 ## 📊 Sistem Predikat
 
-| Nilai | Predikat | Keterangan |
-|-------|----------|------------|
-| ≥ 90 | **A** | Sangat Baik |
-| ≥ KKM s/d < 90 | **B** | Baik |
-| 60 s/d < KKM | **C** | Cukup |
-| < 60 | **D** | Perlu Bimbingan |
+| Nilai | Predikat |
+|-------|----------|
+| ≥ 90 | A — Sangat Baik |
+| ≥ KKM s/d < 90 | B — Baik |
+| 60 s/d < KKM | C — Cukup |
+| < 60 | D — Perlu Bimbingan |
 
 ---
 
-## ⚠️ Catatan Penting
+## 🔐 Keamanan
 
-- Pastikan URL Web App Apps Script sudah benar dan berstatus **Active**.
-- Jika ada error CORS, pastikan deployment menggunakan **Anyone** access.
-- Data tersimpan langsung di Google Spreadsheet, bisa diedit manual jika perlu.
-- Untuk update Apps Script, buat **New Deployment** (bukan edit yang lama).
+- Token auth berbasis base64 (username + password hash)
+- Setiap request ke GAS diverifikasi token
+- Admin default: `admin` / `admin123` — **segera ganti setelah setup!**
+- Untuk keamanan lebih, gunakan Google Sheets sharing permissions

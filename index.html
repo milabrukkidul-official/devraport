@@ -3,252 +3,341 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Aplikasi Rapor Digital</title>
+  <title>Rapor Digital</title>
   <link rel="stylesheet" href="css/style.css" />
+  <link rel="stylesheet" href="css/print.css" media="print" />
 </head>
 <body>
-  <div id="app">
-    <!-- NAVBAR -->
-    <nav class="navbar">
-      <div class="nav-brand">📋 Rapor Digital</div>
-      <div class="nav-links">
-        <button class="nav-btn active" onclick="showPage('home')">🏠 Beranda</button>
-        <button class="nav-btn" onclick="showPage('setting')">⚙️ Setting</button>
-        <button class="nav-btn" onclick="showPage('siswa')">👤 Data Siswa</button>
-        <button class="nav-btn" onclick="showPage('nilai')">📊 Rekap Nilai</button>
-        <button class="nav-btn" onclick="showPage('ekskul')">🏆 Ekstrakurikuler</button>
-        <button class="nav-btn" onclick="showPage('kkm')">📌 KKM</button>
-        <button class="nav-btn" onclick="showPage('cetak')">🖨️ Cetak Rapor</button>
-      </div>
-    </nav>
 
-    <!-- HOME -->
-    <div id="page-home" class="page active">
-      <div class="hero">
-        <h1>📋 Aplikasi Rapor Digital</h1>
-        <p>Kelola data rapor siswa dengan mudah menggunakan Google Spreadsheet sebagai database.</p>
-        <div class="hero-steps">
-          <div class="step">
-            <span class="step-num">1</span>
-            <p>Salin template Google Spreadsheet</p>
-          </div>
-          <div class="step">
-            <span class="step-num">2</span>
-            <p>Deploy Google Apps Script</p>
-          </div>
-          <div class="step">
-            <span class="step-num">3</span>
-            <p>Masukkan URL Web App di bawah</p>
-          </div>
-          <div class="step">
-            <span class="step-num">4</span>
-            <p>Cetak Rapor Siswa</p>
-          </div>
+<!-- ===== LOGIN SCREEN ===== -->
+<div id="loginScreen" class="login-screen">
+  <div class="login-card">
+    <div class="login-logo">📋</div>
+    <h1>Rapor Digital</h1>
+    <p class="login-sub">Sistem Informasi Rapor Madrasah</p>
+    <div class="form-group">
+      <label>Username</label>
+      <input type="text" id="loginUser" placeholder="Masukkan username" autocomplete="username"/>
+    </div>
+    <div class="form-group">
+      <label>Password</label>
+      <input type="password" id="loginPass" placeholder="Masukkan password" autocomplete="current-password"/>
+    </div>
+    <div class="form-group">
+      <label>Kelas</label>
+      <select id="loginKelas">
+        <option value="">Memuat kelas...</option>
+      </select>
+    </div>
+    <button class="btn-primary btn-block" onclick="doLogin()">🔐 Masuk</button>
+    <p id="loginError" class="login-error hidden"></p>
+    <div class="login-hint">
+      <small>Admin: tidak perlu pilih kelas</small>
+    </div>
+  </div>
+</div>
+
+<!-- ===== MAIN APP ===== -->
+<div id="mainApp" class="hidden">
+
+  <!-- NAVBAR -->
+  <nav class="navbar">
+    <div class="nav-brand">📋 Rapor Digital</div>
+    <div class="nav-links" id="navLinks"></div>
+    <div class="nav-user">
+      <span id="navUserInfo"></span>
+      <button class="nav-btn" onclick="doLogout()">🚪 Keluar</button>
+    </div>
+  </nav>
+
+  <!-- ===== HALAMAN ADMIN: KELOLA KELAS & USER ===== -->
+  <div id="page-admin" class="page">
+    <div class="page-header">
+      <h2>🛠️ Panel Admin</h2>
+    </div>
+    <div class="tab-bar">
+      <button class="tab-btn active" onclick="adminTab('kelas')">🏫 Kelola Kelas</button>
+      <button class="tab-btn" onclick="adminTab('user')">👥 Kelola User</button>
+      <button class="tab-btn" onclick="adminTab('gasurl')">🔗 URL Apps Script</button>
+    </div>
+
+    <!-- Tab Kelas -->
+    <div id="adminTab-kelas" class="tab-content active">
+      <div class="page-header" style="margin-top:16px;">
+        <h3>Daftar Kelas</h3>
+        <button class="btn-success" onclick="modalKelas()">➕ Tambah Kelas</button>
+      </div>
+      <div class="table-wrapper">
+        <table id="tblKelas">
+          <thead><tr><th>No</th><th>Nama Kelas</th><th>Wali Kelas</th><th>Semester</th><th>Tahun Pelajaran</th><th>Aksi</th></tr></thead>
+          <tbody id="bodyKelas"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Tab User -->
+    <div id="adminTab-user" class="tab-content">
+      <div class="page-header" style="margin-top:16px;">
+        <h3>Daftar User</h3>
+        <button class="btn-success" onclick="modalUser()">➕ Tambah User</button>
+      </div>
+      <div class="table-wrapper">
+        <table id="tblUser">
+          <thead><tr><th>No</th><th>Username</th><th>Nama Lengkap</th><th>Role</th><th>Kelas</th><th>Aksi</th></tr></thead>
+          <tbody id="bodyUser"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Tab GAS URL -->
+    <div id="adminTab-gasurl" class="tab-content">
+      <div style="max-width:600px;margin-top:16px;">
+        <div class="form-group">
+          <label>🔗 URL Google Apps Script Web App</label>
+          <input type="text" id="adminGasUrl" placeholder="https://script.google.com/macros/s/..."/>
         </div>
-        <div class="config-box">
-          <label>🔗 URL Google Apps Script Web App:</label>
-          <input type="text" id="gasUrl" placeholder="https://script.google.com/macros/s/..." />
-          <button class="btn-primary" onclick="saveGasUrl()">💾 Simpan & Hubungkan</button>
-          <span id="connStatus" class="conn-status"></span>
-        </div>
-        <div class="info-box">
-          <h3>📖 Cara Setup Google Spreadsheet</h3>
+        <button class="btn-primary" onclick="saveGasUrl()">💾 Simpan URL</button>
+        <span id="connStatus" class="conn-status"></span>
+        <div class="info-box" style="margin-top:16px;">
+          <h4>📖 Cara Setup</h4>
           <ol>
-            <li>Buka <a href="https://sheets.google.com" target="_blank">Google Sheets</a> dan buat spreadsheet baru.</li>
-            <li>Buat sheet dengan nama: <strong>SETTING, DATA SISWA, REKAP NILAI, KKM, EKSTRAKURIKULER</strong></li>
-            <li>Buka <strong>Extensions → Apps Script</strong>, paste kode dari file <code>gas/Code.gs</code></li>
-            <li>Deploy sebagai <strong>Web App</strong> (Execute as: Me, Who has access: Anyone)</li>
-            <li>Copy URL Web App dan paste di kolom di atas.</li>
+            <li>Buka Google Sheets → Extensions → Apps Script</li>
+            <li>Paste kode dari file <code>gas/Code.gs</code></li>
+            <li>Jalankan fungsi <code>setupSheets()</code> sekali</li>
+            <li>Deploy → New Deployment → Web App (Execute as: Me, Access: Anyone)</li>
+            <li>Copy URL dan paste di sini</li>
           </ol>
         </div>
       </div>
     </div>
-
-    <!-- SETTING -->
-    <div id="page-setting" class="page">
-      <div class="page-header">
-        <h2>⚙️ Setting Madrasah</h2>
-        <div class="btn-group">
-          <button class="btn-primary" onclick="loadSetting()">🔄 Muat Data</button>
-          <button class="btn-success" onclick="saveSetting()">💾 Simpan</button>
-        </div>
-      </div>
-      <div class="form-grid">
-        <div class="form-group full">
-          <label>URL KOP (gambar header)</label>
-          <input type="text" id="s_urlKop" placeholder="https://... (URL gambar KOP sekolah)" />
-        </div>
-        <div class="form-group">
-          <label>Nama Satuan Pendidikan</label>
-          <input type="text" id="s_namaSatuan" placeholder="MI / MTs / MA ..." />
-        </div>
-        <div class="form-group">
-          <label>Nama Kepala Madrasah</label>
-          <input type="text" id="s_namaKepala" placeholder="Nama Kepala Madrasah" />
-        </div>
-        <div class="form-group">
-          <label>Nama Kelas</label>
-          <input type="text" id="s_namaKelas" placeholder="Kelas 1A / 2B ..." />
-        </div>
-        <div class="form-group">
-          <label>Nama Wali Kelas</label>
-          <input type="text" id="s_namaWali" placeholder="Nama Wali Kelas" />
-        </div>
-        <div class="form-group">
-          <label>Semester</label>
-          <select id="s_semester">
-            <option value="I (GANJIL)">I (GANJIL)</option>
-            <option value="II (GENAP)">II (GENAP)</option>
-          </select>
-        </div>
-        <div class="form-group">
-          <label>Tahun Pelajaran</label>
-          <input type="text" id="s_tahunPelajaran" placeholder="2024/2025" />
-        </div>
-        <div class="form-group">
-          <label>Judul Rapor</label>
-          <input type="text" id="s_judul" placeholder="LAPORAN HASIL BELAJAR SISWA" />
-        </div>
-        <div class="form-group">
-          <label>Tempat Rapor</label>
-          <input type="text" id="s_tempatRapor" placeholder="Nama Kota" />
-        </div>
-        <div class="form-group">
-          <label>Tanggal Penerimaan Rapor</label>
-          <input type="date" id="s_tglRapor" />
-        </div>
-      </div>
-    </div>
-
-    <!-- DATA SISWA -->
-    <div id="page-siswa" class="page">
-      <div class="page-header">
-        <h2>👤 Data Siswa</h2>
-        <div class="btn-group">
-          <button class="btn-primary" onclick="loadSiswa()">🔄 Muat Data</button>
-          <button class="btn-success" onclick="tambahSiswa()">➕ Tambah Siswa</button>
-        </div>
-      </div>
-      <div class="table-wrapper">
-        <table id="tblSiswa">
-          <thead>
-            <tr>
-              <th>No</th>
-              <th>NISN</th>
-              <th>No. Induk</th>
-              <th>Nama Siswa</th>
-              <th>Nama Panggilan</th>
-              <th>Tempat Lahir</th>
-              <th>Tanggal Lahir</th>
-              <th>Nama Orang Tua</th>
-              <th>Pesan Wali Kelas</th>
-              <th>Aksi</th>
-            </tr>
-          </thead>
-          <tbody id="bodySiswa"></tbody>
-        </table>
-      </div>
-      <!-- Modal Siswa -->
-      <div id="modalSiswa" class="modal hidden">
-        <div class="modal-content">
-          <h3 id="modalSiswaTitle">Tambah Siswa</h3>
-          <input type="hidden" id="ms_rowIndex" />
-          <div class="form-grid">
-            <div class="form-group"><label>NISN</label><input type="text" id="ms_nisn" /></div>
-            <div class="form-group"><label>No. Induk</label><input type="text" id="ms_noInduk" /></div>
-            <div class="form-group"><label>Nama Siswa</label><input type="text" id="ms_nama" /></div>
-            <div class="form-group"><label>Nama Panggilan</label><input type="text" id="ms_panggilan" /></div>
-            <div class="form-group"><label>Tempat Lahir</label><input type="text" id="ms_tempatLahir" /></div>
-            <div class="form-group"><label>Tanggal Lahir</label><input type="date" id="ms_tglLahir" /></div>
-            <div class="form-group"><label>Nama Orang Tua</label><input type="text" id="ms_namaOrtu" /></div>
-            <div class="form-group full"><label>Pesan Wali Kelas</label><textarea id="ms_pesan" rows="3"></textarea></div>
-          </div>
-          <div class="modal-actions">
-            <button class="btn-success" onclick="simpanSiswa()">💾 Simpan</button>
-            <button class="btn-danger" onclick="closeModal('modalSiswa')">✖ Batal</button>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- REKAP NILAI -->
-    <div id="page-nilai" class="page">
-      <div class="page-header">
-        <h2>📊 Rekap Nilai</h2>
-        <div class="btn-group">
-          <button class="btn-primary" onclick="loadNilai()">🔄 Muat Data</button>
-          <button class="btn-warning" onclick="tambahMapel()">➕ Tambah Mata Pelajaran</button>
-          <button class="btn-success" onclick="saveNilai()">💾 Simpan Semua</button>
-        </div>
-      </div>
-      <div id="nilaiContainer" class="table-wrapper">
-        <p class="hint">Klik "Muat Data" untuk menampilkan tabel nilai.</p>
-      </div>
-    </div>
-
-    <!-- EKSTRAKURIKULER -->
-    <div id="page-ekskul" class="page">
-      <div class="page-header">
-        <h2>🏆 Ekstrakurikuler</h2>
-        <div class="btn-group">
-          <button class="btn-primary" onclick="loadEkskul()">🔄 Muat Data</button>
-          <button class="btn-warning" onclick="tambahEkskul()">➕ Tambah Ekskul</button>
-          <button class="btn-success" onclick="saveEkskul()">💾 Simpan Semua</button>
-        </div>
-      </div>
-      <div id="ekskulContainer" class="table-wrapper">
-        <p class="hint">Klik "Muat Data" untuk menampilkan data ekstrakurikuler.</p>
-      </div>
-    </div>
-
-    <!-- KKM -->
-    <div id="page-kkm" class="page">
-      <div class="page-header">
-        <h2>📌 KKM (Kriteria Ketuntasan Minimal)</h2>
-        <div class="btn-group">
-          <button class="btn-primary" onclick="loadKKM()">🔄 Muat Data</button>
-          <button class="btn-success" onclick="saveKKM()">💾 Simpan</button>
-        </div>
-      </div>
-      <div id="kkmContainer" class="table-wrapper">
-        <p class="hint">Klik "Muat Data" untuk menampilkan data KKM.</p>
-      </div>
-    </div>
-
-    <!-- CETAK RAPOR -->
-    <div id="page-cetak" class="page">
-      <div class="page-header">
-        <h2>🖨️ Cetak Rapor</h2>
-        <div class="btn-group">
-          <button class="btn-primary" onclick="loadCetakData()">🔄 Muat Data</button>
-          <button class="btn-success" onclick="window.print()">🖨️ Print</button>
-        </div>
-      </div>
-      <div class="siswa-selector">
-        <label>Pilih Siswa:</label>
-        <select id="selectSiswa" onchange="renderRapor()">
-          <option value="">-- Pilih Siswa --</option>
-        </select>
-      </div>
-      <div id="raporPreview"></div>
-    </div>
-
-  </div><!-- end #app -->
-
-  <div id="loadingOverlay" class="loading-overlay hidden">
-    <div class="spinner"></div>
-    <p>Memuat data...</p>
   </div>
 
-  <div id="toast" class="toast hidden"></div>
+  <!-- ===== SETTING KELAS ===== -->
+  <div id="page-setting" class="page">
+    <div class="page-header">
+      <h2>⚙️ Setting Kelas: <span id="settingKelasLabel"></span></h2>
+      <div class="btn-group">
+        <button class="btn-primary" onclick="loadSetting()">🔄 Muat</button>
+        <button class="btn-success" onclick="saveSetting()">💾 Simpan</button>
+      </div>
+    </div>
+    <div class="form-grid">
+      <div class="form-group full">
+        <label>URL KOP (gambar header, maks 1000×300px)</label>
+        <input type="text" id="s_urlKop" placeholder="https://... URL gambar KOP"/>
+        <div id="kopPreview" style="margin-top:8px;"></div>
+      </div>
+      <div class="form-group"><label>Nama Satuan Pendidikan</label><input type="text" id="s_namaSatuan"/></div>
+      <div class="form-group"><label>Nama Kepala Madrasah</label><input type="text" id="s_namaKepala"/></div>
+      <div class="form-group"><label>Nama Kelas</label><input type="text" id="s_namaKelas"/></div>
+      <div class="form-group"><label>Nama Wali Kelas</label><input type="text" id="s_namaWali"/></div>
+      <div class="form-group">
+        <label>Semester</label>
+        <select id="s_semester">
+          <option value="I (GANJIL)">I (GANJIL)</option>
+          <option value="II (GENAP)">II (GENAP)</option>
+        </select>
+      </div>
+      <div class="form-group"><label>Tahun Pelajaran</label><input type="text" id="s_tahunPelajaran" placeholder="2024/2025"/></div>
+      <div class="form-group"><label>Judul Rapor</label><input type="text" id="s_judul" placeholder="LAPORAN HASIL BELAJAR SISWA"/></div>
+      <div class="form-group"><label>Tempat Rapor</label><input type="text" id="s_tempatRapor"/></div>
+      <div class="form-group"><label>Tanggal Penerimaan Rapor</label><input type="date" id="s_tglRapor"/></div>
+    </div>
+  </div>
 
-  <script src="js/api.js"></script>
-  <script src="js/setting.js"></script>
-  <script src="js/siswa.js"></script>
-  <script src="js/nilai.js"></script>
-  <script src="js/ekskul.js"></script>
-  <script src="js/kkm.js"></script>
-  <script src="js/cetak.js"></script>
-  <script src="js/app.js"></script>
+  <!-- ===== DATA SISWA ===== -->
+  <div id="page-siswa" class="page">
+    <div class="page-header">
+      <h2>👤 Data Siswa</h2>
+      <div class="btn-group">
+        <button class="btn-primary" onclick="loadSiswa()">🔄 Muat</button>
+        <button class="btn-success" onclick="tambahSiswa()">➕ Tambah Siswa</button>
+      </div>
+    </div>
+    <div class="table-wrapper">
+      <table id="tblSiswa">
+        <thead>
+          <tr><th>No</th><th>NISN</th><th>No. Induk</th><th>Nama Siswa</th><th>Panggilan</th><th>Tempat Lahir</th><th>Tgl Lahir</th><th>Nama Ortu</th><th>Pesan Wali</th><th>Aksi</th></tr>
+        </thead>
+        <tbody id="bodySiswa"></tbody>
+      </table>
+    </div>
+    <div id="modalSiswa" class="modal hidden">
+      <div class="modal-content">
+        <h3 id="modalSiswaTitle">Tambah Siswa</h3>
+        <input type="hidden" id="ms_rowIndex"/>
+        <div class="form-grid">
+          <div class="form-group"><label>NISN</label><input type="text" id="ms_nisn"/></div>
+          <div class="form-group"><label>No. Induk</label><input type="text" id="ms_noInduk"/></div>
+          <div class="form-group"><label>Nama Siswa</label><input type="text" id="ms_nama"/></div>
+          <div class="form-group"><label>Nama Panggilan</label><input type="text" id="ms_panggilan"/></div>
+          <div class="form-group"><label>Tempat Lahir</label><input type="text" id="ms_tempatLahir"/></div>
+          <div class="form-group"><label>Tanggal Lahir</label><input type="date" id="ms_tglLahir"/></div>
+          <div class="form-group"><label>Nama Orang Tua</label><input type="text" id="ms_namaOrtu"/></div>
+          <div class="form-group full"><label>Pesan Wali Kelas</label><textarea id="ms_pesan" rows="3"></textarea></div>
+        </div>
+        <div class="modal-actions">
+          <button class="btn-success" onclick="simpanSiswa()">💾 Simpan</button>
+          <button class="btn-danger" onclick="closeModal('modalSiswa')">✖ Batal</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== REKAP NILAI ===== -->
+  <div id="page-nilai" class="page">
+    <div class="page-header">
+      <h2>📊 Rekap Nilai</h2>
+      <div class="btn-group">
+        <button class="btn-primary" onclick="loadNilai()">🔄 Muat</button>
+        <button class="btn-warning" onclick="tambahMapel()">➕ Tambah Mapel</button>
+        <button class="btn-success" onclick="saveNilai()">💾 Simpan</button>
+      </div>
+    </div>
+    <div id="nilaiContainer" class="table-wrapper"><p class="hint">Klik "Muat" untuk menampilkan tabel nilai.</p></div>
+  </div>
+
+  <!-- ===== EKSTRAKURIKULER ===== -->
+  <div id="page-ekskul" class="page">
+    <div class="page-header">
+      <h2>🏆 Ekstrakurikuler</h2>
+      <div class="btn-group">
+        <button class="btn-primary" onclick="loadEkskul()">🔄 Muat</button>
+        <button class="btn-warning" onclick="tambahEkskul()">➕ Tambah Ekskul</button>
+        <button class="btn-success" onclick="saveEkskul()">💾 Simpan</button>
+      </div>
+    </div>
+    <div id="ekskulContainer" class="table-wrapper"><p class="hint">Klik "Muat" untuk menampilkan data ekskul.</p></div>
+  </div>
+
+  <!-- ===== KKM ===== -->
+  <div id="page-kkm" class="page">
+    <div class="page-header">
+      <h2>📌 KKM</h2>
+      <div class="btn-group">
+        <button class="btn-primary" onclick="loadKKM()">🔄 Muat</button>
+        <button class="btn-success" onclick="saveKKM()">💾 Simpan</button>
+      </div>
+    </div>
+    <div id="kkmContainer" class="table-wrapper"><p class="hint">Klik "Muat" untuk menampilkan KKM.</p></div>
+  </div>
+
+  <!-- ===== CETAK RAPOR ===== -->
+  <div id="page-cetak" class="page">
+    <div class="page-header no-print">
+      <h2>🖨️ Cetak Rapor</h2>
+      <div class="btn-group">
+        <button class="btn-primary" onclick="loadCetakData()">🔄 Muat Data</button>
+        <button class="btn-success" onclick="cetakRapor()">🖨️ Print</button>
+      </div>
+    </div>
+    <div class="siswa-selector no-print">
+      <label>Pilih Siswa:</label>
+      <select id="selectSiswa" onchange="renderRapor()">
+        <option value="">-- Pilih Siswa --</option>
+      </select>
+    </div>
+    <div id="raporPreview"></div>
+  </div>
+
+</div><!-- end #mainApp -->
+
+<!-- Modal Kelas -->
+<div id="modalKelas" class="modal hidden">
+  <div class="modal-content">
+    <h3 id="modalKelasTitle">Tambah Kelas</h3>
+    <input type="hidden" id="mk_id"/>
+    <div class="form-grid">
+      <div class="form-group"><label>ID Kelas (unik, tanpa spasi)</label><input type="text" id="mk_id_input" placeholder="kelas_1a"/></div>
+      <div class="form-group"><label>Nama Kelas</label><input type="text" id="mk_nama" placeholder="Kelas 1A"/></div>
+      <div class="form-group"><label>Wali Kelas (username)</label><input type="text" id="mk_wali" placeholder="username wali kelas"/></div>
+      <div class="form-group"><label>Semester</label>
+        <select id="mk_semester">
+          <option value="I (GANJIL)">I (GANJIL)</option>
+          <option value="II (GENAP)">II (GENAP)</option>
+        </select>
+      </div>
+      <div class="form-group"><label>Tahun Pelajaran</label><input type="text" id="mk_tahun" placeholder="2024/2025"/></div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn-success" onclick="simpanKelas()">💾 Simpan</button>
+      <button class="btn-danger" onclick="closeModal('modalKelas')">✖ Batal</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal User -->
+<div id="modalUser" class="modal hidden">
+  <div class="modal-content">
+    <h3 id="modalUserTitle">Tambah User</h3>
+    <input type="hidden" id="mu_idx"/>
+    <div class="form-grid">
+      <div class="form-group"><label>Username</label><input type="text" id="mu_username"/></div>
+      <div class="form-group"><label>Password</label><input type="password" id="mu_password" placeholder="Kosongkan jika tidak diubah"/></div>
+      <div class="form-group"><label>Nama Lengkap</label><input type="text" id="mu_nama"/></div>
+      <div class="form-group">
+        <label>Role</label>
+        <select id="mu_role" onchange="toggleUserKelas()">
+          <option value="admin">Admin</option>
+          <option value="walikelas">Wali Kelas</option>
+          <option value="guruMapel">Guru Mapel</option>
+        </select>
+      </div>
+      <div class="form-group" id="mu_kelasGroup">
+        <label>Kelas (untuk Wali Kelas / Guru Mapel)</label>
+        <select id="mu_kelas"><option value="">-- Pilih Kelas --</option></select>
+      </div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn-success" onclick="simpanUser()">💾 Simpan</button>
+      <button class="btn-danger" onclick="closeModal('modalUser')">✖ Batal</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Reset Password -->
+<div id="modalResetPass" class="modal hidden">
+  <div class="modal-content" style="max-width:420px;">
+    <h3>🔑 Reset Password</h3>
+    <p style="margin-bottom:16px;color:#555;font-size:0.9rem;">
+      Reset password untuk: <strong id="rp_usernameLabel"></strong>
+    </p>
+    <input type="hidden" id="rp_username"/>
+    <div class="form-group" style="margin-bottom:12px;">
+      <label>Password Baru</label>
+      <div style="position:relative;">
+        <input type="password" id="rp_newPass" placeholder="Masukkan password baru" style="padding-right:40px;"/>
+        <button onclick="togglePassVisibility('rp_newPass','rp_eyeBtn')" id="rp_eyeBtn"
+          style="position:absolute;right:8px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;font-size:1rem;">👁️</button>
+      </div>
+    </div>
+    <div class="form-group" style="margin-bottom:4px;">
+      <label>Konfirmasi Password Baru</label>
+      <input type="password" id="rp_confirmPass" placeholder="Ulangi password baru"/>
+    </div>
+    <p id="rp_error" class="login-error hidden" style="margin-bottom:8px;"></p>
+    <div class="modal-actions">
+      <button class="btn-success" onclick="simpanResetPassword()">🔑 Reset Password</button>
+      <button class="btn-danger" onclick="closeModal('modalResetPass')">✖ Batal</button>
+    </div>
+  </div>
+</div>
+
+<!-- Loading & Toast -->
+<div id="loadingOverlay" class="loading-overlay hidden">
+  <div class="spinner"></div><p>Memuat...</p>
+</div>
+<div id="toast" class="toast hidden"></div>
+
+<script src="js/api.js"></script>
+<script src="js/app.js"></script>
+<script src="js/auth.js"></script>
+<script src="js/admin.js"></script>
+<script src="js/setting.js"></script>
+<script src="js/siswa.js"></script>
+<script src="js/nilai.js"></script>
+<script src="js/ekskul.js"></script>
+<script src="js/kkm.js"></script>
+<script src="js/cetak.js"></script>
 </body>
 </html>

@@ -1,10 +1,11 @@
-// ===== EKSTRAKURIKULER =====
+// ===== EKSTRAKURIKULER (per kelas) =====
 
 let ekskulData = { kegiatan: [], siswa: [], nilai: [] };
 
 async function loadEkskul() {
+  const kelasId = currentUser?.kelasId || '';
   try {
-    const data = await API.call('getEkskul');
+    const data = await API.call('getEkskul', { kelasId });
     ekskulData = data;
     renderTabelEkskul();
     showToast('Data ekskul dimuat!', 'success');
@@ -14,30 +15,24 @@ async function loadEkskul() {
 function renderTabelEkskul() {
   const container = document.getElementById('ekskulContainer');
   const { kegiatan, siswa, nilai } = ekskulData;
-
-  if (!siswa.length) {
+  if (!siswa || !siswa.length) {
     container.innerHTML = '<p class="hint">Belum ada data siswa.</p>';
     return;
   }
-
-  let html = `<table>
-    <thead>
-      <tr>
-        <th>No</th>
-        <th>Nama Siswa</th>`;
+  let html = `<div style="overflow-x:auto;"><table>
+    <thead><tr><th>No</th><th>Nama Siswa</th>`;
   kegiatan.forEach((k, ki) => {
-    html += `<th>${k}<br/>
-      <button class="btn-danger" onclick="hapusKegiatan(${ki})" style="padding:2px 6px;font-size:0.7rem;margin-top:4px;">✖</button>
+    html += `<th style="min-width:110px;">${k}<br/>
+      <button class="btn-danger" onclick="hapusKegiatan(${ki})" style="padding:1px 5px;font-size:0.7rem;margin-top:3px;">✖</button>
     </th>`;
   });
   html += `</tr></thead><tbody>`;
-
   siswa.forEach((s, si) => {
-    html += `<tr><td>${si+1}</td><td>${s.nama}</td>`;
+    html += `<tr><td>${si+1}</td><td style="white-space:nowrap;">${s.nama}</td>`;
     kegiatan.forEach((k, ki) => {
       const val = (nilai[si] && nilai[si][ki] !== undefined) ? nilai[si][ki] : '';
       html += `<td>
-        <select onchange="updateEkskul(${si},${ki},this.value)" style="width:100px;">
+        <select onchange="updateEkskul(${si},${ki},this.value)" style="width:110px;">
           <option value="">-</option>
           <option value="A" ${val==='A'?'selected':''}>A (Sangat Baik)</option>
           <option value="B" ${val==='B'?'selected':''}>B (Baik)</option>
@@ -47,8 +42,7 @@ function renderTabelEkskul() {
     });
     html += `</tr>`;
   });
-
-  html += `</tbody></table>`;
+  html += `</tbody></table></div>`;
   container.innerHTML = html;
 }
 
@@ -74,8 +68,10 @@ function hapusKegiatan(ki) {
 }
 
 async function saveEkskul() {
+  const kelasId = currentUser?.kelasId || '';
   try {
     await API.post('saveEkskul', {
+      kelasId,
       kegiatan: JSON.stringify(ekskulData.kegiatan),
       nilai:    JSON.stringify(ekskulData.nilai)
     });
