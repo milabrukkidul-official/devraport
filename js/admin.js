@@ -18,7 +18,7 @@ async function loadAdminData() {
     renderTabelRombel();
     renderTabelKelas();
     renderTabelUser();
-    onKelasListLoaded(adminKelasCache);
+    onRombelListLoaded(rombelCache);
   } catch(e) {}
 }
 

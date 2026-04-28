@@ -76,20 +76,20 @@ function populateAdminKelasSelectors() {
     if (!bar || !sel) return;
     bar.classList.remove('hidden');
     const prev = sel.value;
-    sel.innerHTML = '<option value="">-- Pilih Kelas --</option>';
-    (window._kelasList || []).forEach(k => {
+    sel.innerHTML = '<option value="">-- Pilih Rombel --</option>';
+    (window._rombelList || []).forEach(r => {
       const opt = document.createElement('option');
-      opt.value = k.id;
-      opt.textContent = `${k.nama} (${k.id})`;
-      if (k.id === prev) opt.selected = true;
+      opt.value = r.id;
+      opt.textContent = `${r.nama} (${r.id})`;
+      if (r.id === prev) opt.selected = true;
       sel.appendChild(opt);
     });
   });
 }
 
 // Dipanggil setelah loadAdminData berhasil
-function onKelasListLoaded(kelasList) {
-  window._kelasList = kelasList || [];
+function onRombelListLoaded(rombelList) {
+  window._rombelList = rombelList || [];
   populateAdminKelasSelectors();
 }
 
