@@ -354,24 +354,21 @@
 
 <!-- Modal User -->
 <div id="modalUser" class="modal hidden">
-  <div class="modal-content">
+  <div class="modal-content" style="max-width:480px;">
     <h3 id="modalUserTitle">Tambah User</h3>
     <input type="hidden" id="mu_idx"/>
     <div class="form-grid">
       <div class="form-group"><label>Username</label><input type="text" id="mu_username"/></div>
       <div class="form-group"><label>Password</label><input type="password" id="mu_password" placeholder="Kosongkan jika tidak diubah"/></div>
-      <div class="form-group"><label>Nama Lengkap</label><input type="text" id="mu_nama"/></div>
-      <div class="form-group">
+      <div class="form-group full"><label>Nama Lengkap</label><input type="text" id="mu_nama"/></div>
+      <div class="form-group full">
         <label>Role</label>
-        <select id="mu_role" onchange="toggleUserKelas()">
+        <select id="mu_role">
           <option value="admin">Admin</option>
           <option value="walikelas">Wali Kelas</option>
           <option value="guruMapel">Guru Mapel</option>
         </select>
-      </div>
-      <div class="form-group" id="mu_kelasGroup">
-        <label>Kelas (untuk Wali Kelas / Guru Mapel)</label>
-        <select id="mu_kelas"><option value="">-- Pilih Kelas --</option></select>
+        <small style="color:#888;margin-top:4px;">Penugasan kelas diatur di menu Kelola Kelas.</small>
       </div>
     </div>
     <div class="modal-actions">
