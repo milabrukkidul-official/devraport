@@ -25,6 +25,33 @@ async function loadAdminData() {
 // ============================================================
 // KELAS — Tambah Satu
 // ============================================================
+
+// Helper: bangun <option> list dari user role walikelas
+function buildWaliOptions(selectedUsername = '') {
+  const waliList = adminUserCache.filter(u => u.role === 'walikelas');
+  let opts = '<option value="">-- Pilih Wali Kelas (opsional) --</option>';
+  waliList.forEach(u => {
+    const sel = u.username === selectedUsername ? 'selected' : '';
+    opts += `<option value="${u.username}" ${sel}>${u.nama} (${u.username})</option>`;
+  });
+  if (!waliList.length) {
+    opts += '<option value="" disabled>Belum ada user Wali Kelas</option>';
+  }
+  return opts;
+}
+
+// Helper: bangun <select> wali kelas inline untuk bulk (string HTML)
+function buildWaliSelect(id, selectedUsername = '') {
+  const waliList = adminUserCache.filter(u => u.role === 'walikelas');
+  let html = `<select id="${id}" style="width:100%;padding:5px 4px;border:1px solid #d1d5db;border-radius:4px;font-size:0.78rem;">
+    <option value="">-- Pilih --</option>`;
+  waliList.forEach(u => {
+    const sel = u.username === selectedUsername ? 'selected' : '';
+    html += `<option value="${u.username}" ${sel}>${u.nama}</option>`;
+  });
+  html += '</select>';
+  return html;
+}
 function renderTabelKelas() {
   const tbody = document.getElementById('bodyKelas');
   tbody.innerHTML = '';
@@ -52,13 +79,17 @@ function renderTabelKelas() {
 function modalKelas(idx) {
   const isEdit = idx !== undefined;
   document.getElementById('modalKelasTitle').textContent = isEdit ? 'Edit Kelas' : 'Tambah Kelas';
+
+  // Populate dropdown wali kelas dari user role walikelas
+  document.getElementById('mk_wali').innerHTML = buildWaliOptions();
+
   if (isEdit) {
     const k = adminKelasCache[idx];
     document.getElementById('mk_id').value           = k.id;
     document.getElementById('mk_id_input').value     = k.id;
     document.getElementById('mk_id_input').disabled  = true;
     document.getElementById('mk_nama').value         = k.nama;
-    document.getElementById('mk_wali').value         = k.wali || '';
+    document.getElementById('mk_wali').innerHTML     = buildWaliOptions(k.wali);
     document.getElementById('mk_semester').value     = k.semester || 'I (GANJIL)';
     document.getElementById('mk_tahun').value        = k.tahun || '';
   } else {
@@ -66,7 +97,6 @@ function modalKelas(idx) {
     document.getElementById('mk_id_input').value     = '';
     document.getElementById('mk_id_input').disabled  = false;
     document.getElementById('mk_nama').value         = '';
-    document.getElementById('mk_wali').value         = '';
     document.getElementById('mk_semester').value     = 'I (GANJIL)';
     document.getElementById('mk_tahun').value        = '';
   }
@@ -86,7 +116,7 @@ function autoNamaKelas() {
 async function simpanKelas() {
   const id       = (document.getElementById('mk_id').value || document.getElementById('mk_id_input').value).trim().replace(/\s+/g,'_');
   const nama     = document.getElementById('mk_nama').value.trim();
-  const wali     = document.getElementById('mk_wali').value.trim();
+  const wali     = document.getElementById('mk_wali').value;   // value dari <select>
   const semester = document.getElementById('mk_semester').value;
   const tahun    = document.getElementById('mk_tahun').value.trim();
 
@@ -152,8 +182,7 @@ function tambahBarisBulk() {
         style="width:100%;padding:5px 7px;border:1px solid #d1d5db;border-radius:4px;font-size:0.82rem;"/>
     </td>
     <td style="padding:4px 6px;">
-      <input type="text" id="bk_wali_${n}" placeholder="username"
-        style="width:100%;padding:5px 7px;border:1px solid #d1d5db;border-radius:4px;font-size:0.82rem;"/>
+      ${buildWaliSelect(`bk_wali_${n}`)}
     </td>
     <td style="padding:4px 6px;">
       <select id="bk_sem_${n}" style="width:100%;padding:5px 4px;border:1px solid #d1d5db;border-radius:4px;font-size:0.78rem;">
@@ -224,7 +253,7 @@ async function simpanBulkKelas() {
     kelasList.push({
       id,
       nama,
-      wali:     document.getElementById(`bk_wali_${i}`)?.value.trim() || '',
+      wali:     document.getElementById(`bk_wali_${i}`)?.value || '',
       semester: document.getElementById(`bk_sem_${i}`)?.value || 'I (GANJIL)',
       tahun:    document.getElementById(`bk_thn_${i}`)?.value.trim() || '',
     });
