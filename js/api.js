@@ -5,7 +5,6 @@ const GAS_URL = 'https://script.google.com/macros/s/AKfycbyHgdNtLBeznoZIgfA3ijnu
 
 const API = {
   getUrl() {
-    // Prioritas: URL yang disimpan admin di localStorage (bisa di-override via panel admin)
     return localStorage.getItem('gasUrl') || GAS_URL;
   },
 
@@ -16,6 +15,8 @@ const API = {
     } catch { return ''; }
   },
 
+  // Semua request (GET & POST) dikirim sebagai POST dengan JSON body
+  // agar token tidak rusak di URL (base64 mengandung +/= yang bermasalah di query string)
   async call(action, payload = {}) {
     const url = this.getUrl();
     if (!url || url.includes('GANTI_DENGAN')) {
@@ -24,13 +25,10 @@ const API = {
     }
     showLoading(true);
     try {
-      // Token di-encode agar karakter +/= tidak rusak di URL
-      const params = new URLSearchParams({
-        action,
-        token: encodeURIComponent(this.getToken()),
-        ...payload
+      const res  = await fetch(url, {
+        method: 'POST',
+        body:   JSON.stringify({ action, token: this.getToken(), ...payload })
       });
-      const res  = await fetch(`${url}?${params.toString()}`);
       const data = await res.json();
       if (data.error) throw new Error(data.error);
       return data;
@@ -43,28 +41,10 @@ const API = {
   },
 
   async post(action, body = {}) {
-    const url = this.getUrl();
-    if (!url || url.includes('GANTI_DENGAN')) {
-      showToast('URL Apps Script belum diset!', 'error');
-      throw new Error('No GAS URL');
-    }
-    showLoading(true);
-    try {
-      const res = await fetch(url, {
-        method: 'POST',
-        body: JSON.stringify({ action, token: this.getToken(), ...body })
-      });
-      const data = await res.json();
-      if (data.error) throw new Error(data.error);
-      return data;
-    } catch (e) {
-      showToast('Error: ' + e.message, 'error');
-      throw e;
-    } finally {
-      showLoading(false);
-    }
+    return this.call(action, body);
   },
 
+  // Login — tidak butuh token, tetap POST
   async login(username, password, kelasId) {
     const url = this.getUrl();
     if (!url || url.includes('GANTI_DENGAN')) {
@@ -73,8 +53,10 @@ const API = {
     }
     showLoading(true);
     try {
-      const params = new URLSearchParams({ action: 'login', username, password, kelasId });
-      const res = await fetch(`${url}?${params.toString()}`);
+      const res  = await fetch(url, {
+        method: 'POST',
+        body:   JSON.stringify({ action: 'login', username, password, kelasId })
+      });
       return await res.json();
     } catch (e) {
       showToast('Gagal terhubung ke server', 'error');
@@ -84,12 +66,12 @@ const API = {
     }
   },
 
+  // Kelas publik untuk dropdown login — tidak butuh token, GET biasa
   async getKelasPublic() {
     const url = this.getUrl();
     if (!url || url.includes('GANTI_DENGAN')) return { kelas: [] };
     try {
-      const params = new URLSearchParams({ action: 'getKelasPublic' });
-      const res = await fetch(`${url}?${params.toString()}`);
+      const res = await fetch(`${url}?action=getKelasPublic`);
       return await res.json();
     } catch { return { kelas: [] }; }
   }
