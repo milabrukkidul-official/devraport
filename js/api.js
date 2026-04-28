@@ -26,8 +26,9 @@ const API = {
     showLoading(true);
     try {
       const res  = await fetch(url, {
-        method: 'POST',
-        body:   JSON.stringify({ action, token: this.getToken(), ...payload })
+        method:  'POST',
+        headers: { 'Content-Type': 'text/plain' }, // GAS butuh text/plain, bukan application/json
+        body:    JSON.stringify({ action, token: this.getToken(), ...payload })
       });
       const data = await res.json();
       if (data.error) throw new Error(data.error);
@@ -44,7 +45,6 @@ const API = {
     return this.call(action, body);
   },
 
-  // Login — tidak butuh token, tetap POST
   async login(username, password, kelasId) {
     const url = this.getUrl();
     if (!url || url.includes('GANTI_DENGAN')) {
@@ -54,8 +54,9 @@ const API = {
     showLoading(true);
     try {
       const res  = await fetch(url, {
-        method: 'POST',
-        body:   JSON.stringify({ action: 'login', username, password, kelasId })
+        method:  'POST',
+        headers: { 'Content-Type': 'text/plain' },
+        body:    JSON.stringify({ action: 'login', username, password, kelasId })
       });
       return await res.json();
     } catch (e) {
