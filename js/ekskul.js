@@ -4,13 +4,29 @@ let ekskulData = { kegiatan: [], siswa: [], nilai: [] };
 
 async function loadEkskul() {
   const rombelId = getActiveRombelId('ekskul');
-  if (!rombelId) { showToast('Pilih rombel terlebih dahulu!', 'error'); return; }
+  if (!rombelId) {
+    // Jika admin belum pilih rombel, tampilkan pesan tanpa error
+    if (currentUser && currentUser.role === 'admin') {
+      ekskulData = { kegiatan: [], siswa: [], nilai: [] };
+      renderTabelEkskul();
+      return;
+    }
+    showToast('Pilih rombel terlebih dahulu!', 'error');
+    return;
+  }
   try {
     const data = await API.call('getEkskul', { kelasId: rombelId });
+    if (data.error) {
+      showToast('Error: ' + data.error, 'error');
+      return;
+    }
     ekskulData = data;
     renderTabelEkskul();
     showToast('Data ekskul dimuat!', 'success');
-  } catch(e) {}
+  } catch(e) {
+    showToast('Error memuat data ekskul: ' + e.message, 'error');
+    console.error('Error loadEkskul:', e);
+  }
 }
 
 function renderTabelEkskul() {

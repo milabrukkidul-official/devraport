@@ -4,13 +4,29 @@ let nilaiData = { mapel: [], siswa: [], nilai: [] };
 
 async function loadNilai() {
   const rombelId = getActiveRombelId('nilai');
-  if (!rombelId) { showToast('Pilih rombel terlebih dahulu!', 'error'); return; }
+  if (!rombelId) {
+    // Jika admin belum pilih rombel, tampilkan pesan tanpa error
+    if (currentUser && currentUser.role === 'admin') {
+      nilaiData = { mapel: [], siswa: [], nilai: [] };
+      renderTabelNilai();
+      return;
+    }
+    showToast('Pilih rombel terlebih dahulu!', 'error');
+    return;
+  }
   try {
     const data = await API.call('getNilai', { kelasId: rombelId });
+    if (data.error) {
+      showToast('Error: ' + data.error, 'error');
+      return;
+    }
     nilaiData = data;
     renderTabelNilai();
     showToast('Data nilai dimuat!', 'success');
-  } catch(e) {}
+  } catch(e) {
+    showToast('Error memuat data nilai: ' + e.message, 'error');
+    console.error('Error loadNilai:', e);
+  }
 }
 
 function renderTabelNilai() {

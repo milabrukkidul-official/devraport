@@ -162,7 +162,6 @@
     <div class="page-header">
       <h2>👤 Data Siswa</h2>
       <div class="btn-group">
-        <button class="btn-primary" onclick="loadSiswa()">🔄 Muat</button>
         <button class="btn-success" onclick="tambahSiswa()">➕ Tambah Siswa</button>
         <button class="btn-warning" onclick="showModalUploadSiswa()">📤 Upload Excel</button>
         <a id="btnTemplateSiswa" class="btn-warning" style="padding:7px 14px;border-radius:6px;font-size:0.83rem;font-weight:600;text-decoration:none;cursor:pointer;" onclick="downloadTemplateSiswa()">📥 Template .xlsx</a>
@@ -214,13 +213,12 @@
     <div class="page-header">
       <h2>📊 Rekap Nilai</h2>
       <div class="btn-group">
-        <button class="btn-primary" onclick="loadNilai()">🔄 Muat</button>
         <button class="btn-warning" onclick="showModalUploadNilai()">📤 Upload Excel</button>
         <a class="btn-warning" style="padding:7px 14px;border-radius:6px;font-size:0.83rem;font-weight:600;text-decoration:none;cursor:pointer;" onclick="downloadTemplateNilai()">📥 Template .xlsx</a>
         <button class="btn-success" onclick="saveNilai()">💾 Simpan</button>
       </div>
     </div>
-    <div id="nilaiContainer" class="table-wrapper"><p class="hint">Klik "Muat" untuk menampilkan tabel nilai.</p></div>
+    <div id="nilaiContainer" class="table-wrapper"><p class="hint">Memuat data nilai...</p></div>
   </div>
 
   <!-- ===== EKSTRAKURIKULER ===== -->
@@ -232,12 +230,11 @@
     <div class="page-header">
       <h2>🏆 Ekstrakurikuler</h2>
       <div class="btn-group">
-        <button class="btn-primary" onclick="loadEkskul()">🔄 Muat</button>
         <button class="btn-warning" onclick="tambahEkskul()">➕ Tambah Ekskul</button>
         <button class="btn-success" onclick="saveEkskul()">💾 Simpan</button>
       </div>
     </div>
-    <div id="ekskulContainer" class="table-wrapper"><p class="hint">Klik "Muat" untuk menampilkan data ekskul.</p></div>
+    <div id="ekskulContainer" class="table-wrapper"><p class="hint">Memuat data ekskul...</p></div>
   </div>
 
   <!-- ===== KKM ===== -->
@@ -265,7 +262,6 @@
     <div class="page-header no-print">
       <h2>🖨️ Cetak Rapor</h2>
       <div class="btn-group">
-        <button class="btn-primary" onclick="loadCetakData()">🔄 Muat Data</button>
         <button class="btn-success" onclick="cetakRapor()">🖨️ Print</button>
       </div>
     </div>

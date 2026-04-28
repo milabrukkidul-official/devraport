@@ -11,7 +11,16 @@ async function loadSiswa() {
     warning.style.display = !rombelId ? 'block' : 'none';
   }
   
-  if (!rombelId) { showToast('Pilih rombel terlebih dahulu!', 'error'); return; }
+  if (!rombelId) {
+    // Jika admin belum pilih rombel, tampilkan pesan tanpa error
+    if (currentUser && currentUser.role === 'admin') {
+      renderTabelSiswa([]);
+      return;
+    }
+    showToast('Pilih rombel terlebih dahulu!', 'error');
+    return;
+  }
+  
   try {
     const data = await API.call('getSiswa', { kelasId: rombelId });
     if (data.error) {

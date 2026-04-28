@@ -77,6 +77,12 @@ function initCetakPage() {
     if (bar) bar.classList.add('hidden');
     // Auto-load data
     loadCetakData();
+  } else if (currentUser && currentUser.role === 'admin') {
+    // Admin: auto-load jika sudah ada rombel yang dipilih
+    const rombelId = getActiveRombelId('cetak');
+    if (rombelId) {
+      loadCetakData();
+    }
   }
 }
 

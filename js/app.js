@@ -8,9 +8,17 @@ function showPage(name) {
   const btn = document.querySelector(`.nav-btn[data-page="${name}"]`);
   if (btn) btn.classList.add('active');
   
-  // Auto-init untuk halaman tertentu
-  if (name === 'cetak' && typeof initCetakPage === 'function') {
+  // Auto-load data saat pindah halaman
+  if (name === 'siswa' && typeof loadSiswa === 'function') {
+    loadSiswa();
+  } else if (name === 'nilai' && typeof loadNilai === 'function') {
+    loadNilai();
+  } else if (name === 'ekskul' && typeof loadEkskul === 'function') {
+    loadEkskul();
+  } else if (name === 'cetak' && typeof initCetakPage === 'function') {
     initCetakPage();
+  } else if (name === 'kkm' && typeof loadKKM === 'function') {
+    loadKKM();
   }
 }
 
