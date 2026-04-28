@@ -79,9 +79,12 @@ function canAccessRombel(token, rombelId) {
   const u = verifyToken(token);
   if (!u) return false;
   if (u.role === 'admin') return true;
+  // Normalize rombelId untuk perbandingan (trim dan lowercase)
+  const userRombelId = (u.rombelId || '').toString().trim().toLowerCase();
+  const requestedRombelId = (rombelId || '').toString().trim().toLowerCase();
   // Debug: log untuk melihat apakah rombelId cocok
-  Logger.log('canAccessRombel - user.rombelId: ' + u.rombelId + ', requested rombelId: ' + rombelId);
-  return u.rombelId === rombelId;
+  Logger.log('canAccessRombel - user: ' + u.username + ', role: ' + u.role + ', user.rombelId: "' + userRombelId + '", requested: "' + requestedRombelId + '"');
+  return userRombelId === requestedRombelId;
 }
 
 function canEditNilai(token, rombelId) {
@@ -89,11 +92,21 @@ function canEditNilai(token, rombelId) {
   if (!u) return false;
   if (u.role === 'admin') return true;
   if (!rombelId) return false;
-  if (u.role === 'walikelas') return u.rombelId === rombelId;
+  
+  // Normalize rombelId untuk perbandingan
+  const requestedRombelId = (rombelId || '').toString().trim().toLowerCase();
+  
+  if (u.role === 'walikelas') {
+    const userRombelId = (u.rombelId || '').toString().trim().toLowerCase();
+    return userRombelId === requestedRombelId;
+  }
+  
   // guruMapel: rombelId bisa berupa JSON array atau string tunggal
   if (u.role === 'guruMapel') {
     const rombelList = parseRombelId_(u.rombelId);
-    return rombelList.includes(rombelId);
+    // Normalize semua rombelId di list
+    const normalizedList = rombelList.map(id => (id || '').toString().trim().toLowerCase());
+    return normalizedList.includes(requestedRombelId);
   }
   return false;
 }
