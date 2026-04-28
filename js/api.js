@@ -5,9 +5,12 @@ const API = {
     return localStorage.getItem('gasUrl') || '';
   },
 
-  // Sertakan token auth di setiap request
+  // Ambil token dari currentUser (disimpan di sessionStorage sebagai 'currentUser')
   getToken() {
-    return sessionStorage.getItem('authToken') || '';
+    try {
+      const u = JSON.parse(sessionStorage.getItem('currentUser') || '{}');
+      return u.token || '';
+    } catch { return ''; }
   },
 
   async call(action, payload = {}) {

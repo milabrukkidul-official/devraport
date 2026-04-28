@@ -102,6 +102,7 @@ function doPost(e) {
       case 'saveSetting':  return R(requireKelas(body.token, body.kelasId, () => saveSetting_(body)));
       case 'saveSiswa':    return R(requireKelas(body.token, body.kelasId, () => saveSiswa_(body)));
       case 'deleteSiswa':  return R(requireKelas(body.token, body.kelasId, () => deleteSiswa_(body)));
+      case 'importSiswa':  return R(requireKelas(body.token, body.kelasId, () => importSiswa_(body)));
       case 'saveNilai':    return R(requireNilai(body.token, body.kelasId, () => saveNilai_(body)));
       case 'saveKKM':      return R(requireKelas(body.token, body.kelasId, () => saveKKM_(body)));
       case 'saveEkskul':   return R(requireKelas(body.token, body.kelasId, () => saveEkskul_(body)));
@@ -338,6 +339,27 @@ function deleteSiswa_(body) {
   const sh = getSheet(shName(kelasId, 'SISWA'));
   sh.deleteRow(rowIndex + 2);
   return { success: true };
+}
+
+// Import batch siswa dari CSV
+function importSiswa_(body) {
+  const kelasId   = body.kelasId;
+  const siswaList = JSON.parse(body.siswaList);
+  if (!siswaList || !siswaList.length) return { error: 'Data kosong.' };
+
+  const sh = getSheet(shName(kelasId, 'SISWA'));
+  // Pastikan header ada
+  if (sh.getLastRow() === 0) {
+    sh.appendRow(SISWA_H);
+  }
+  // Append semua baris sekaligus
+  const rows = siswaList
+    .filter(s => s.nama)
+    .map(s => SISWA_H.map(h => s[h] || ''));
+  if (rows.length) {
+    sh.getRange(sh.getLastRow() + 1, 1, rows.length, SISWA_H.length).setValues(rows);
+  }
+  return { success: true, imported: rows.length };
 }
 
 // ============================================================

@@ -79,6 +79,7 @@ a { color: #2563eb; }
   padding: 7px 14px; border: none; border-radius: 6px;
   cursor: pointer; font-size: 0.83rem; font-weight: 600;
   transition: opacity 0.2s, transform 0.1s;
+  display: inline-block; line-height: normal;
 }
 .btn-primary:hover, .btn-success:hover, .btn-danger:hover, .btn-warning:hover {
   opacity: 0.85; transform: translateY(-1px);
