@@ -156,10 +156,8 @@ function login_(username, password, kelasId) {
   const user = users.find(u => u.username === username && u.password === password);
   if (!user) return { success: false, message: 'Username atau password salah.' };
 
-  if (user.role !== 'admin') {
-    if (!kelasId) return { success: false, message: 'Pilih kelas terlebih dahulu.' };
-    if (user.kelasId !== kelasId) return { success: false, message: 'Anda tidak memiliki akses ke kelas ini.' };
-  }
+  // kelasId diambil dari data user di spreadsheet, bukan dari input login
+  const userKelasId = user.role === 'admin' ? '' : (user.kelasId || '');
 
   const token = makeToken_(user.username, user.password);
   return {
@@ -168,7 +166,7 @@ function login_(username, password, kelasId) {
       username: user.username,
       nama:     user.nama,
       role:     user.role,
-      kelasId:  user.role === 'admin' ? (kelasId || '') : user.kelasId,
+      kelasId:  userKelasId,
       token:    token
     }
   };
