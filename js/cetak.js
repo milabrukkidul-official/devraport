@@ -1,25 +1,36 @@
 // ===== CETAK RAPOR (per kelas, A4) =====
+// namaKelas & namaWali diambil dari data kelas (_KELAS), bukan dari setting
 
 let cetakCache = {};
 
 async function loadCetakData() {
   const kelasId = currentUser?.kelasId || '';
   try {
-    const [settingRes, siswaRes, nilaiRes, kkmRes, ekskulRes] = await Promise.all([
+    // Ambil semua data paralel, termasuk info kelas dari daftar kelas
+    const [settingRes, siswaRes, nilaiRes, kkmRes, ekskulRes, kelasRes] = await Promise.all([
       API.call('getSetting', { kelasId }),
       API.call('getSiswa',   { kelasId }),
       API.call('getNilai',   { kelasId }),
       API.call('getKKM',     { kelasId }),
       API.call('getEkskul',  { kelasId }),
+      API.call('getKelasPublic'),           // ambil daftar kelas untuk namaKelas & namaWali
     ]);
+
+    // Cari data kelas yang sesuai dengan kelasId user
+    const kelasList = kelasRes.kelas || [];
+    const kelasInfo = kelasList.find(k => k.id === kelasId) || {};
+
     cetakCache = {
-      setting:  settingRes.setting  || {},
-      siswa:    siswaRes.siswa      || [],
-      mapel:    nilaiRes.mapel      || [],
-      nilai:    nilaiRes.nilai      || [],
-      kkm:      kkmRes.kkm          || {},
-      kegiatan: ekskulRes.kegiatan  || [],
-      ekskul:   ekskulRes.nilai     || [],
+      setting:   settingRes.setting  || {},
+      siswa:     siswaRes.siswa      || [],
+      mapel:     nilaiRes.mapel      || [],
+      nilai:     nilaiRes.nilai      || [],
+      kkm:       kkmRes.kkm          || {},
+      kegiatan:  ekskulRes.kegiatan  || [],
+      ekskul:    ekskulRes.nilai     || [],
+      // Data kelas otomatis dari _KELAS sheet
+      namaKelas: kelasInfo.nama      || '',
+      namaWali:  kelasInfo.waliNama  || kelasInfo.wali || '',  // waliNama = nama lengkap wali kelas
     };
     populateSiswaSelect();
     showToast('Data rapor dimuat!', 'success');
@@ -41,7 +52,7 @@ function renderRapor() {
   const idx = document.getElementById('selectSiswa').value;
   if (idx === '') { document.getElementById('raporPreview').innerHTML = ''; return; }
   const si = parseInt(idx);
-  const { setting, siswa, mapel, nilai, kkm, kegiatan, ekskul } = cetakCache;
+  const { setting, siswa, mapel, nilai, kkm, kegiatan, ekskul, namaKelas, namaWali } = cetakCache;
   const s = siswa[si];
   if (!s) return;
 
@@ -59,7 +70,6 @@ function renderRapor() {
   } else {
     kopHtml = `<div class="rapor-kop-text">
       <h2>${setting.namaSatuan || 'NAMA SATUAN PENDIDIKAN'}</h2>
-      <p>Alamat Madrasah</p>
     </div>`;
   }
 
@@ -110,7 +120,10 @@ function renderRapor() {
   const tglRaporFmt = formatTanggal(setting.tglRapor);
   const tempatTgl   = [setting.tempatRapor, tglRaporFmt].filter(Boolean).join(', ');
 
-  // ===== RENDER =====
+  // Huruf seksi
+  const sekB = adaEkskul ? 'C' : 'B';
+  const sekC = adaEkskul ? 'D' : 'C';
+
   const html = `
   <div class="rapor-page">
 
@@ -129,7 +142,7 @@ function renderRapor() {
         <tr><td>Nama Orang Tua</td><td>:</td><td>${s.namaOrtu || ''}</td></tr>
         <tr><td>Nomor Induk</td><td>:</td><td>${s.noInduk || ''}</td></tr>
         <tr><td>NISN</td><td>:</td><td>${s.nisn || ''}</td></tr>
-        <tr><td>Kelas</td><td>:</td><td>${setting.namaKelas || ''}</td></tr>
+        <tr><td>Kelas</td><td>:</td><td>${namaKelas}</td></tr>
       </table>
     </div>
 
@@ -161,7 +174,7 @@ function renderRapor() {
       <tbody>${ekskulRows}</tbody>
     </table>` : ''}
 
-    <div class="rapor-section-title">${adaEkskul ? 'C' : 'B'}. KETIDAKHADIRAN</div>
+    <div class="rapor-section-title">${sekB}. KETIDAKHADIRAN</div>
     <table class="rapor-kehadiran-table">
       <thead><tr><th>Sakit</th><th>Ijin</th><th>Alpa</th></tr></thead>
       <tbody><tr>
@@ -172,7 +185,7 @@ function renderRapor() {
     </table>
 
     ${s.pesan ? `
-    <div class="rapor-section-title">${adaEkskul ? 'D' : 'C'}. CATATAN WALI KELAS</div>
+    <div class="rapor-section-title">${sekC}. CATATAN WALI KELAS</div>
     <div class="rapor-catatan">${s.pesan}</div>` : ''}
 
     <div class="rapor-tempat-tgl">${tempatTgl}</div>
@@ -186,7 +199,7 @@ function renderRapor() {
       <div class="ttd-box">
         <p>Wali Kelas</p>
         <div class="ttd-space"></div>
-        <div class="ttd-name">( ${setting.namaWali || '&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;'} )</div>
+        <div class="ttd-name">( ${namaWali || '&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;'} )</div>
       </div>
       <div class="ttd-box">
         <p>Kepala Madrasah</p>

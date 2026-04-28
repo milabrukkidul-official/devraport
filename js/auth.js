@@ -100,9 +100,15 @@ function showMainApp() {
   // Tampilkan halaman default
   if (currentUser.role === 'admin') {
     showPage('admin');
-    // Load GAS URL ke input admin
-    const saved = localStorage.getItem('gasUrl');
-    if (saved) document.getElementById('adminGasUrl').value = saved;
+    // Tampilkan URL override jika ada, atau info bahwa URL sudah di kode
+    const override = localStorage.getItem('gasUrl');
+    const inp = document.getElementById('adminGasUrl');
+    if (inp) inp.value = override || '';
+    const st = document.getElementById('connStatus');
+    if (st) {
+      st.textContent = override ? '✅ Override aktif' : '✅ Menggunakan GAS_URL dari api.js';
+      st.className = 'conn-status ok';
+    }
     loadAdminData();
   } else if (currentUser.role === 'walikelas') {
     showPage('setting');

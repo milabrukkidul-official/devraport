@@ -21,7 +21,7 @@ function renderTabelKelas() {
   const tbody = document.getElementById('bodyKelas');
   tbody.innerHTML = '';
   if (!adminKelasCache.length) {
-    tbody.innerHTML = '<tr><td colspan="6" class="hint">Belum ada kelas.</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="7" class="hint">Belum ada kelas.</td></tr>';
     return;
   }
   adminKelasCache.forEach((k, i) => {
@@ -30,14 +30,13 @@ function renderTabelKelas() {
       <td>${i+1}</td>
       <td><strong>${k.id}</strong></td>
       <td>${k.nama}</td>
-      <td>${k.wali || '-'}</td>
+      <td>${k.waliNama || k.wali || '-'}</td>
       <td>${k.semester || ''}</td>
       <td>${k.tahun || ''}</td>
-      <td>
+      <td style="white-space:nowrap;">
         <button class="btn-warning" onclick="modalKelas(${i})" style="padding:3px 8px;font-size:0.78rem;">✏️</button>
         <button class="btn-danger"  onclick="hapusKelas('${k.id}')" style="padding:3px 8px;font-size:0.78rem;margin-left:4px;">🗑️</button>
       </td>`;
-    // Fix: thead has 6 cols but we render 7 tds — fix header
     tbody.appendChild(tr);
   });
 }

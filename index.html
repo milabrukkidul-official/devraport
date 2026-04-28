@@ -71,7 +71,7 @@
       </div>
       <div class="table-wrapper">
         <table id="tblKelas">
-          <thead><tr><th>No</th><th>Nama Kelas</th><th>Wali Kelas</th><th>Semester</th><th>Tahun Pelajaran</th><th>Aksi</th></tr></thead>
+          <thead><tr><th>No</th><th>ID Kelas</th><th>Nama Kelas</th><th>Wali Kelas</th><th>Semester</th><th>Tahun Pelajaran</th><th>Aksi</th></tr></thead>
           <tbody id="bodyKelas"></tbody>
         </table>
       </div>
@@ -94,20 +94,29 @@
     <!-- Tab GAS URL -->
     <div id="adminTab-gasurl" class="tab-content">
       <div style="max-width:600px;margin-top:16px;">
+        <div class="info-box" style="margin-bottom:16px;background:#fefce8;border-color:#fde68a;">
+          <h4>⚠️ URL sudah terpasang di kode</h4>
+          <p style="font-size:0.85rem;margin-top:4px;">URL Apps Script sudah di-hardcode di file <code>js/api.js</code> baris pertama (konstanta <code>GAS_URL</code>). Tidak perlu diubah lagi setelah deploy.</p>
+          <p style="font-size:0.85rem;margin-top:6px;">Kolom di bawah hanya untuk <strong>override sementara</strong> (tersimpan di browser ini saja).</p>
+        </div>
         <div class="form-group">
-          <label>🔗 URL Google Apps Script Web App</label>
+          <label>🔗 Override URL (opsional — kosongkan untuk pakai URL di kode)</label>
           <input type="text" id="adminGasUrl" placeholder="https://script.google.com/macros/s/..."/>
         </div>
-        <button class="btn-primary" onclick="saveGasUrl()">💾 Simpan URL</button>
-        <span id="connStatus" class="conn-status"></span>
+        <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+          <button class="btn-primary" onclick="saveGasUrl()">💾 Simpan Override</button>
+          <button class="btn-danger"  onclick="clearGasUrl()">🗑️ Hapus Override</button>
+          <span id="connStatus" class="conn-status"></span>
+        </div>
         <div class="info-box" style="margin-top:16px;">
-          <h4>📖 Cara Setup</h4>
+          <h4>📖 Cara Setup (sekali saja)</h4>
           <ol>
-            <li>Buka Google Sheets → Extensions → Apps Script</li>
-            <li>Paste kode dari file <code>gas/Code.gs</code></li>
-            <li>Jalankan fungsi <code>setupSheets()</code> sekali</li>
-            <li>Deploy → New Deployment → Web App (Execute as: Me, Access: Anyone)</li>
-            <li>Copy URL dan paste di sini</li>
+            <li>Buka Google Sheets → <strong>Extensions → Apps Script</strong></li>
+            <li>Paste seluruh isi file <code>gas/Code.gs</code></li>
+            <li>Jalankan fungsi <code>setupSheets()</code> <strong>sekali</strong></li>
+            <li><strong>Deploy → New Deployment → Web App</strong><br/>Execute as: <em>Me</em> | Access: <em>Anyone</em></li>
+            <li>Copy URL Web App → paste ke konstanta <code>GAS_URL</code> di <code>js/api.js</code></li>
+            <li>Commit & push ke GitHub — selesai, tidak perlu diubah lagi</li>
           </ol>
         </div>
       </div>
@@ -123,6 +132,10 @@
         <button class="btn-success" onclick="saveSetting()">💾 Simpan</button>
       </div>
     </div>
+    <p style="font-size:0.83rem;color:#6b7280;margin-bottom:14px;">
+      💡 Nama Kelas dan Nama Wali Kelas diambil otomatis dari data kelas yang dibuat Admin.
+      Setting ini tersimpan otomatis saat Anda mengubah isian.
+    </p>
     <div class="form-grid">
       <div class="form-group full">
         <label>URL KOP (gambar header, maks 1000×300px)</label>
@@ -131,8 +144,6 @@
       </div>
       <div class="form-group"><label>Nama Satuan Pendidikan</label><input type="text" id="s_namaSatuan"/></div>
       <div class="form-group"><label>Nama Kepala Madrasah</label><input type="text" id="s_namaKepala"/></div>
-      <div class="form-group"><label>Nama Kelas</label><input type="text" id="s_namaKelas"/></div>
-      <div class="form-group"><label>Nama Wali Kelas</label><input type="text" id="s_namaWali"/></div>
       <div class="form-group">
         <label>Semester</label>
         <select id="s_semester">

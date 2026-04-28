@@ -31,11 +31,19 @@ function saveGasUrl() {
   if (!url) { showToast('Masukkan URL terlebih dahulu', 'error'); return; }
   localStorage.setItem('gasUrl', url);
   const st = document.getElementById('connStatus');
-  st.textContent = '✅ Tersimpan';
+  st.textContent = '✅ Override tersimpan';
   st.className = 'conn-status ok';
-  showToast('URL berhasil disimpan!', 'success');
-  // Reload kelas di login
+  showToast('URL override disimpan!', 'success');
   loadKelasLogin();
+}
+
+function clearGasUrl() {
+  localStorage.removeItem('gasUrl');
+  document.getElementById('adminGasUrl').value = '';
+  const st = document.getElementById('connStatus');
+  st.textContent = '✅ Menggunakan URL dari kode';
+  st.className = 'conn-status ok';
+  showToast('Override dihapus, menggunakan GAS_URL dari api.js', 'success');
 }
 
 // ===== HELPERS =====
