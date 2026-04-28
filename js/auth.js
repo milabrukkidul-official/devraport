@@ -95,9 +95,9 @@ function buildNavbar() {
     pages.push({ id: 'siswa',   label: '👤 Siswa' });
     pages.push({ id: 'nilai',   label: '📊 Nilai' });
     pages.push({ id: 'ekskul',  label: '🏆 Ekskul' });
-    pages.push({ id: 'kkm',     label: '📌 KKM' });
     pages.push({ id: 'cetak',   label: '🖨️ Cetak' });
   } else {
+    // guruMapel: hanya nilai
     pages.push({ id: 'nilai', label: '📊 Nilai' });
   }
 

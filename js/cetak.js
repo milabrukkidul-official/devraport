@@ -10,14 +10,14 @@ async function loadCetakData() {
     return; 
   }
   try {
-    // Untuk wali kelas: hanya ambil data rombel mereka (tanpa setting global)
-    // Untuk admin: ambil semua data termasuk setting
+    // Untuk wali kelas: hanya ambil data rombel mereka (tanpa setting global dan KKM)
+    // Untuk admin: ambil semua data termasuk setting dan KKM
     const isAdmin = currentUser && currentUser.role === 'admin';
     
     let settingRes, siswaRes, nilaiRes, kkmRes, ekskulRes, rombelRes;
     
     if (isAdmin) {
-      // Admin: ambil semua data termasuk setting
+      // Admin: ambil semua data termasuk setting dan KKM
       [settingRes, siswaRes, nilaiRes, kkmRes, ekskulRes, rombelRes] = await Promise.all([
         API.call('getSetting'),
         API.call('getSiswa',   { kelasId: rombelId }),
@@ -27,22 +27,22 @@ async function loadCetakData() {
         API.call('getRombel'),
       ]);
       if (settingRes.error) { showToast('Error getSetting: ' + settingRes.error, 'error'); return; }
+      if (kkmRes.error) { showToast('Error getKKM: ' + kkmRes.error, 'error'); return; }
     } else {
-      // Wali kelas: hanya ambil data rombel mereka (tanpa setting)
-      [siswaRes, nilaiRes, kkmRes, ekskulRes, rombelRes] = await Promise.all([
+      // Wali kelas: hanya ambil data rombel mereka (tanpa setting dan KKM)
+      [siswaRes, nilaiRes, ekskulRes, rombelRes] = await Promise.all([
         API.call('getSiswa',   { kelasId: rombelId }),
         API.call('getNilai',   { kelasId: rombelId }),
-        API.call('getKKM',     { kelasId: rombelId }),
         API.call('getEkskul',  { kelasId: rombelId }),
         API.call('getRombel'),
       ]);
       settingRes = { setting: {} }; // Setting kosong untuk wali kelas
+      kkmRes = { kkm: {} }; // KKM kosong untuk wali kelas (akan pakai default 70)
     }
 
     // Cek error dari setiap response
     if (siswaRes.error) { showToast('Error getSiswa: ' + siswaRes.error, 'error'); return; }
     if (nilaiRes.error) { showToast('Error getNilai: ' + nilaiRes.error, 'error'); return; }
-    if (kkmRes.error) { showToast('Error getKKM: ' + kkmRes.error, 'error'); return; }
     if (ekskulRes.error) { showToast('Error getEkskul: ' + ekskulRes.error, 'error'); return; }
     if (rombelRes.error) { showToast('Error getRombel: ' + rombelRes.error, 'error'); return; }
 
