@@ -130,8 +130,8 @@ function handleAction_(body) {
       // getRombel: izinkan semua user yang login (wali kelas perlu data ini untuk cetak rapor)
       case 'getRombel':     return R(verifyToken(body.token) ? getRombel_() : { error: 'Akses ditolak' });
       
-      // ── Setting global (admin only, tanpa rombelId) ──
-      case 'getSetting':    return R(requireAdmin(body.token, () => getSettingGlobal_()));
+      // ── Setting global (semua user bisa baca untuk cetak rapor, hanya admin bisa edit) ──
+      case 'getSetting':    return R(verifyToken(body.token) ? getSettingGlobal_() : { error: 'Akses ditolak' });
       
       // ── Per-rombel read (kelasId di parameter sebenarnya adalah rombelId) ──
       case 'getSiswa':      return R(requireRombel(body.token, body.kelasId, () => getSiswa_(body.kelasId)));
