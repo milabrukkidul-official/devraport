@@ -72,10 +72,7 @@ async function loadCetakData() {
 // Auto-load data untuk wali kelas saat halaman cetak dibuka
 function initCetakPage() {
   if (currentUser && currentUser.role === 'walikelas') {
-    // Sembunyikan selector rombel untuk wali kelas
-    const bar = document.getElementById('adminRombelBar-cetak');
-    if (bar) bar.classList.add('hidden');
-    // Auto-load data
+    // Auto-load data untuk wali kelas
     loadCetakData();
   } else if (currentUser && currentUser.role === 'admin') {
     // Admin: auto-load jika sudah ada rombel yang dipilih
