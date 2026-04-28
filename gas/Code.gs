@@ -76,20 +76,15 @@ function canEditNilai(token, kelasId) {
 }
 
 // ===== ROUTER =====
+// Semua request bertoken dikirim via POST (token aman di body JSON).
+// doGet hanya untuk endpoint publik tanpa token.
 function doGet(e) {
   const p = e.parameter;
   try {
     switch(p.action) {
-      case 'login':          return R(login_(p.username, p.password, p.kelasId));
       case 'getKelasPublic': return R(getKelasPublic_());
-      case 'getKelas':       return R(requireAdmin(p.token, () => getKelasPublic_()));
-      case 'getUsers':       return R(requireAdmin(p.token, () => getUsers_()));
-      case 'getSetting':     return R(requireKelas(p.token, p.kelasId, () => getSetting_(p.kelasId)));
-      case 'getSiswa':       return R(requireKelas(p.token, p.kelasId, () => getSiswa_(p.kelasId)));
-      case 'getNilai':       return R(requireNilai(p.token, p.kelasId, () => getNilai_(p.kelasId)));
-      case 'getKKM':         return R(requireKelas(p.token, p.kelasId, () => getKKM_(p.kelasId)));
-      case 'getEkskul':      return R(requireKelas(p.token, p.kelasId, () => getEkskul_(p.kelasId)));
-      default:               return R({ error: 'Unknown action' });
+      case 'login':          return R(login_(p.username, p.password, p.kelasId));
+      default:               return R({ error: 'Gunakan POST untuk action ini.' });
     }
   } catch(err) { return R({ error: err.message }); }
 }
@@ -98,11 +93,24 @@ function doPost(e) {
   const body = JSON.parse(e.postData.contents);
   try {
     switch(body.action) {
+      // ── Admin read (dipindah ke POST agar token aman) ──
+      case 'getKelas':      return R(requireAdmin(body.token, () => getKelasPublic_()));
+      case 'getUsers':      return R(requireAdmin(body.token, () => getUsers_()));
+      // ── Per-kelas read ──
+      case 'getSetting':    return R(requireKelas(body.token, body.kelasId, () => getSetting_(body.kelasId)));
+      case 'getSiswa':      return R(requireKelas(body.token, body.kelasId, () => getSiswa_(body.kelasId)));
+      case 'getNilai':      return R(requireNilai(body.token, body.kelasId, () => getNilai_(body.kelasId)));
+      case 'getKKM':        return R(requireKelas(body.token, body.kelasId, () => getKKM_(body.kelasId)));
+      case 'getEkskul':     return R(requireKelas(body.token, body.kelasId, () => getEkskul_(body.kelasId)));
+      // ── Login (tidak butuh token) ──
+      case 'login':         return R(login_(body.username, body.password, body.kelasId));
+      // ── Admin write ──
       case 'saveKelas':     return R(requireAdmin(body.token, () => saveKelas_(body)));
       case 'deleteKelas':   return R(requireAdmin(body.token, () => deleteKelas_(body)));
       case 'saveUser':      return R(requireAdmin(body.token, () => saveUser_(body)));
       case 'deleteUser':    return R(requireAdmin(body.token, () => deleteUser_(body)));
       case 'resetPassword': return R(requireAdmin(body.token, () => resetPassword_(body)));
+      // ── Per-kelas write ──
       case 'saveSetting':   return R(requireKelas(body.token, body.kelasId, () => saveSetting_(body)));
       case 'saveSiswa':     return R(requireKelas(body.token, body.kelasId, () => saveSiswa_(body)));
       case 'deleteSiswa':   return R(requireKelas(body.token, body.kelasId, () => deleteSiswa_(body)));
@@ -110,7 +118,7 @@ function doPost(e) {
       case 'saveNilai':     return R(requireNilai(body.token, body.kelasId, () => saveNilai_(body)));
       case 'saveKKM':       return R(requireKelas(body.token, body.kelasId, () => saveKKM_(body)));
       case 'saveEkskul':    return R(requireKelas(body.token, body.kelasId, () => saveEkskul_(body)));
-      default:              return R({ error: 'Unknown action' });
+      default:              return R({ error: 'Unknown action: ' + body.action });
     }
   } catch(err) { return R({ error: err.message }); }
 }
