@@ -328,10 +328,12 @@ function renderTabelRombel() {
   const tbody = document.getElementById('bodyRombel');
   if (!tbody) return;
   tbody.innerHTML = '';
-  if (!rombelCache.length) { tbody.innerHTML='<tr><td colspan="5" class="hint">Belum ada rombel. Klik "Tambah Rombel".</td></tr>'; return; }
+  if (!rombelCache.length) { tbody.innerHTML='<tr><td colspan="6" class="hint">Belum ada rombel. Klik "Tambah Rombel".</td></tr>'; return; }
   rombelCache.forEach((r,i) => {
+    const waliNama = r.waliNama || r.wali || '-';
     const tr = document.createElement('tr');
     tr.innerHTML = `<td>${i+1}</td><td><strong>${r.id}</strong></td><td>${r.nama}</td>
+      <td>${waliNama}</td>
       <td style="font-size:0.8rem;color:#555;max-width:300px;">${r.mapel.join(', ')||'-'}</td>
       <td style="white-space:nowrap;">
         <button class="btn-warning" onclick="modalRombel(${i})" style="padding:3px 8px;font-size:0.78rem;">✏️</button>
@@ -346,12 +348,14 @@ let rombelMapelTemp = [];
 function modalRombel(idx) {
   const isEdit = idx !== undefined;
   document.getElementById('modalRombelTitle').textContent = isEdit ? 'Edit Rombel' : 'Tambah Rombel';
+  document.getElementById('mr_wali').innerHTML = buildWaliOptions();
   if (isEdit) {
     const r = rombelCache[idx];
     document.getElementById('mr_id_hidden').value = r.id;
     document.getElementById('mr_id').value = r.id;
     document.getElementById('mr_id').disabled = true;
     document.getElementById('mr_nama').value = r.nama;
+    document.getElementById('mr_wali').innerHTML = buildWaliOptions(r.wali || '');
     rombelMapelTemp = [...r.mapel];
   } else {
     document.getElementById('mr_id_hidden').value = '';
@@ -432,11 +436,12 @@ document.addEventListener('DOMContentLoaded', () => {
 async function simpanRombel() {
   const id = (document.getElementById('mr_id_hidden').value||document.getElementById('mr_id').value).trim().replace(/\s+/g,'_');
   const nama = document.getElementById('mr_nama').value.trim();
+  const wali = document.getElementById('mr_wali').value;
   if (!id) { showToast('ID Rombel wajib!','error'); return; }
   if (!nama) { showToast('Nama Rombel wajib!','error'); return; }
   if (!rombelMapelTemp.length) { showToast('Minimal 1 mapel!','error'); return; }
   try {
-    await API.post('saveRombel',{rombel:JSON.stringify({id,nama,mapel:rombelMapelTemp})});
+    await API.post('saveRombel',{rombel:JSON.stringify({id,nama,wali,mapel:rombelMapelTemp})});
     closeModal('modalRombel');
     showToast(`Rombel "${nama}" disimpan!`,'success');
     await loadAdminData();
