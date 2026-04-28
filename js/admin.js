@@ -13,7 +13,6 @@ async function loadAdminData() {
     renderTabelKelas();
     renderTabelUser();
     onKelasListLoaded(adminKelasCache);
-    populateMapelKelasSelect();
     await loadRombelAdmin();
   } catch(e) {}
 }
@@ -199,10 +198,23 @@ function renderTabelUser() {
   const rl = { admin:'🔴 Admin', walikelas:'🟡 Wali Kelas', guruMapel:'🟢 Guru Mapel' };
   adminUserCache.forEach((u,i) => {
     const tr = document.createElement('tr');
+    // Parse kelasId: bisa string atau JSON array
+    let kelasLabel = u.kelasId || '-';
+    try {
+      const arr = JSON.parse(u.kelasId);
+      if (Array.isArray(arr)) kelasLabel = arr.length ? arr.join(', ') : '-';
+    } catch(e) {}
+
+    const assignBtn = u.role === 'guruMapel'
+      ? `<button class="btn-primary" onclick="modalAssignKelasGuru('${u.username}')" style="padding:3px 8px;font-size:0.78rem;margin-left:4px;" title="Assign Kelas">🏫</button>`
+      : '';
+
     tr.innerHTML = `<td>${i+1}</td><td><strong>${u.username}</strong></td><td>${u.nama}</td>
-      <td>${rl[u.role]||u.role}</td><td>${u.kelasId||'-'}</td>
+      <td>${rl[u.role]||u.role}</td>
+      <td style="font-size:0.8rem;max-width:160px;">${kelasLabel}</td>
       <td style="white-space:nowrap;">
         <button class="btn-warning" onclick="modalUser(${i})" style="padding:3px 8px;font-size:0.78rem;">✏️</button>
+        ${assignBtn}
         <button class="btn-primary" onclick="modalResetPassword('${u.username}','${u.nama}')" style="padding:3px 8px;font-size:0.78rem;margin-left:4px;">🔑</button>
         <button class="btn-danger" onclick="hapusUser('${u.username}')" style="padding:3px 8px;font-size:0.78rem;margin-left:4px;">🗑️</button>
       </td>`;
@@ -280,105 +292,6 @@ async function simpanResetPassword() {
 }
 
 // ============================================================
-// KELOLA MAPEL
-// ============================================================
-let mapelAdminData = [];
-
-function populateMapelKelasSelect() {
-  const sel = document.getElementById('mapelKelasSelect');
-  if (!sel) return;
-  const prev = sel.value;
-  sel.innerHTML = '<option value="">-- Pilih Kelas --</option>';
-  adminKelasCache.forEach(k => {
-    const opt = document.createElement('option');
-    opt.value = k.id; opt.textContent = `${k.nama} (${k.id})`;
-    if (k.id===prev) opt.selected = true;
-    sel.appendChild(opt);
-  });
-}
-
-async function loadMapelAdmin() {
-  const kelasId = document.getElementById('mapelKelasSelect').value;
-  if (!kelasId) { document.getElementById('mapelAdminContainer').innerHTML='<p class="hint">Pilih kelas.</p>'; return; }
-  try {
-    const data = await API.call('getNilai',{kelasId});
-    mapelAdminData = data.mapel || [];
-    renderMapelAdmin();
-    showToast('Mapel dimuat!','success');
-  } catch(e) {}
-}
-
-function renderMapelAdmin() {
-  const c = document.getElementById('mapelAdminContainer');
-  if (!mapelAdminData.length) { c.innerHTML='<p class="hint">Belum ada mapel. Klik "Tambah Mapel" atau terapkan dari Rombel.</p>'; return; }
-  let h = `<table><thead><tr><th style="width:40px;">No</th><th>Nama Mata Pelajaran</th><th style="width:80px;">Urutan</th><th style="width:60px;">Hapus</th></tr></thead><tbody>`;
-  mapelAdminData.forEach((m,i) => {
-    h += `<tr><td>${i+1}</td>
-      <td><input type="text" value="${m}" onchange="updateMapelAdmin(${i},this.value)"
-        style="width:100%;padding:5px 8px;border:1px solid #d1d5db;border-radius:4px;font-size:0.85rem;"/></td>
-      <td style="text-align:center;">
-        <button onclick="naikkMapel(${i})" style="background:none;border:none;cursor:pointer;font-size:1rem;">⬆️</button>
-        <button onclick="turunMapel(${i})" style="background:none;border:none;cursor:pointer;font-size:1rem;">⬇️</button>
-      </td>
-      <td style="text-align:center;"><button class="btn-danger" onclick="hapusMapelAdmin(${i})" style="padding:3px 8px;font-size:0.78rem;">✖</button></td>
-    </tr>`;
-  });
-  c.innerHTML = h + '</tbody></table>';
-}
-function updateMapelAdmin(i,val) { mapelAdminData[i]=val.trim(); }
-function tambahMapelAdmin() {
-  const nama = prompt('Nama Mata Pelajaran:');
-  if (!nama||!nama.trim()) return;
-  mapelAdminData.push(nama.trim()); renderMapelAdmin();
-}
-function hapusMapelAdmin(i) {
-  if (!confirm(`Hapus "${mapelAdminData[i]}"?`)) return;
-  mapelAdminData.splice(i,1); renderMapelAdmin();
-}
-function naikkMapel(i) { if(i>0){[mapelAdminData[i-1],mapelAdminData[i]]=[mapelAdminData[i],mapelAdminData[i-1]];renderMapelAdmin();} }
-function turunMapel(i) { if(i<mapelAdminData.length-1){[mapelAdminData[i],mapelAdminData[i+1]]=[mapelAdminData[i+1],mapelAdminData[i]];renderMapelAdmin();} }
-
-async function saveMapelAdmin() {
-  const kelasId = document.getElementById('mapelKelasSelect').value;
-  if (!kelasId) { showToast('Pilih kelas!','error'); return; }
-  if (!mapelAdminData.length) { showToast('Minimal 1 mapel!','error'); return; }
-  try { await API.post('saveMapel',{kelasId,mapel:JSON.stringify(mapelAdminData)}); showToast('Mapel disimpan!','success'); } catch(e) {}
-}
-
-function modalSalinMapel() {
-  const kelasId = document.getElementById('mapelKelasSelect').value;
-  if (!kelasId) { showToast('Pilih kelas sumber!','error'); return; }
-  if (!mapelAdminData.length) { showToast('Muat mapel dulu!','error'); return; }
-  document.getElementById('salinDariLabel').textContent = kelasId;
-  document.getElementById('salinError').textContent = '';
-  const box = document.getElementById('salinKelasCheckboxes');
-  box.innerHTML = '';
-  adminKelasCache.filter(k=>k.id!==kelasId).forEach(k => {
-    const lbl = document.createElement('label');
-    lbl.style.cssText = 'display:flex;align-items:center;gap:8px;cursor:pointer;font-size:0.88rem;';
-    lbl.innerHTML = `<input type="checkbox" value="${k.id}" style="width:16px;height:16px;"/>
-      <span>${k.nama} <small style="color:#888;">(${k.id})</small></span>`;
-    box.appendChild(lbl);
-  });
-  if (!box.children.length) box.innerHTML = '<p style="color:#888;font-size:0.85rem;">Tidak ada kelas lain.</p>';
-  document.getElementById('modalSalinMapel').classList.remove('hidden');
-}
-
-async function eksekusiSalinMapel() {
-  const targets = [...document.querySelectorAll('#salinKelasCheckboxes input:checked')].map(c=>c.value);
-  if (!targets.length) { document.getElementById('salinError').textContent='Pilih minimal 1 kelas!'; return; }
-  showLoading(true);
-  let ok=0; const fail=[];
-  for (const kelasId of targets) {
-    try { await API.post('saveMapel',{kelasId,mapel:JSON.stringify(mapelAdminData)}); ok++; } catch { fail.push(kelasId); }
-  }
-  showLoading(false);
-  closeModal('modalSalinMapel');
-  fail.length ? showToast(`${ok} berhasil, gagal: ${fail.join(', ')}`, 'error')
-              : showToast(`✅ Mapel disalin ke ${ok} kelas!`, 'success');
-}
-
-// ============================================================
 // ROMBEL — dengan referensi mata pelajaran
 // ============================================================
 
@@ -408,10 +321,11 @@ function renderTabelRombel() {
   rombelCache.forEach((r,i) => {
     const tr = document.createElement('tr');
     tr.innerHTML = `<td>${i+1}</td><td><strong>${r.id}</strong></td><td>${r.nama}</td>
-      <td style="font-size:0.8rem;color:#555;">${r.mapel.join(', ')||'-'}</td>
+      <td style="font-size:0.8rem;color:#555;max-width:300px;">${r.mapel.join(', ')||'-'}</td>
       <td style="white-space:nowrap;">
-        <button class="btn-warning" onclick="modalRombel(${i})" style="padding:3px 8px;font-size:0.78rem;">✏️</button>
-        <button class="btn-danger" onclick="hapusRombel('${r.id}')" style="padding:3px 8px;font-size:0.78rem;margin-left:4px;">🗑️</button>
+        <button class="btn-primary" onclick="modalTerapkanRombel('${r.id}')" style="padding:3px 8px;font-size:0.78rem;" title="Terapkan ke Kelas">🏫</button>
+        <button class="btn-warning" onclick="modalRombel(${i})" style="padding:3px 8px;font-size:0.78rem;margin-left:4px;" title="Edit">✏️</button>
+        <button class="btn-danger" onclick="hapusRombel('${r.id}')" style="padding:3px 8px;font-size:0.78rem;margin-left:4px;" title="Hapus">🗑️</button>
       </td>`;
     tbody.appendChild(tr);
   });
@@ -553,15 +467,111 @@ async function hapusRombel(id) {
   try { await API.post('deleteRombel',{rombelId:id}); showToast('Rombel dihapus!','success'); await loadRombelAdmin(); } catch(e) {}
 }
 
-async function terapkanRombelKeKelas() {
-  const rombelId = document.getElementById('mapelRombelSelect').value;
-  const kelasId  = document.getElementById('mapelKelasSelect').value;
+async function terapkanRombelKeKelas(kelasId) {
+  // Dipanggil dari tab Rombel saat klik tombol "Terapkan ke Kelas"
+  if (!kelasId) { showToast('Pilih kelas tujuan!','error'); return; }
+  const rombelId = document.getElementById('mapelRombelSelect')?.value;
   if (!rombelId) { showToast('Pilih rombel!','error'); return; }
-  if (!kelasId)  { showToast('Pilih kelas!','error'); return; }
   const rombel = rombelCache.find(r=>r.id===rombelId);
   if (!rombel) { showToast('Rombel tidak ditemukan!','error'); return; }
   if (!confirm(`Terapkan ${rombel.mapel.length} mapel dari "${rombel.nama}" ke kelas "${kelasId}"?\nNilai yang ada dipertahankan.`)) return;
-  mapelAdminData = [...rombel.mapel];
-  renderMapelAdmin();
-  showToast(`Mapel dari "${rombel.nama}" diterapkan. Klik Simpan.`,'success');
+  try {
+    await API.post('saveMapel',{kelasId,mapel:JSON.stringify(rombel.mapel)});
+    showToast(`Mapel "${rombel.nama}" diterapkan ke ${kelasId}!`,'success');
+  } catch(e) {}
+}
+
+let _terapkanRombelId = '';
+
+function modalTerapkanRombel(rombelId) {
+  const rombel = rombelCache.find(r => r.id === rombelId);
+  if (!rombel) return;
+  _terapkanRombelId = rombelId;
+  document.getElementById('terapkanRombelLabel').textContent = `"${rombel.nama}" (${rombel.mapel.length} mapel)`;
+  document.getElementById('terapkanError').textContent = '';
+
+  const box = document.getElementById('terapkanKelasCheckboxes');
+  box.innerHTML = '';
+  if (!adminKelasCache.length) {
+    box.innerHTML = '<p style="color:#888;font-size:0.85rem;">Belum ada kelas.</p>';
+  } else {
+    adminKelasCache.forEach(k => {
+      const lbl = document.createElement('label');
+      lbl.style.cssText = 'display:flex;align-items:center;gap:8px;cursor:pointer;font-size:0.88rem;padding:4px 0;';
+      lbl.innerHTML = `<input type="checkbox" value="${k.id}" style="width:16px;height:16px;"/>
+        <span>${k.nama} <small style="color:#888;">(${k.id})</small></span>`;
+      box.appendChild(lbl);
+    });
+  }
+  document.getElementById('modalTerapkanRombel').classList.remove('hidden');
+}
+
+async function eksekusiTerapkanRombel() {
+  const rombel = rombelCache.find(r => r.id === _terapkanRombelId);
+  if (!rombel) return;
+  const targets = [...document.querySelectorAll('#terapkanKelasCheckboxes input:checked')].map(c => c.value);
+  if (!targets.length) {
+    document.getElementById('terapkanError').textContent = 'Pilih minimal 1 kelas!'; return;
+  }
+  showLoading(true);
+  let ok = 0; const fail = [];
+  for (const kelasId of targets) {
+    try {
+      await API.post('saveMapel', { kelasId, mapel: JSON.stringify(rombel.mapel) });
+      ok++;
+    } catch { fail.push(kelasId); }
+  }
+  showLoading(false);
+  closeModal('modalTerapkanRombel');
+  fail.length
+    ? showToast(`${ok} berhasil, gagal: ${fail.join(', ')}`, 'error')
+    : showToast(`✅ Mapel "${rombel.nama}" diterapkan ke ${ok} kelas!`, 'success');
+}
+
+// ============================================================
+// ASSIGN KELAS KE GURU MAPEL
+// ============================================================
+function modalAssignKelasGuru(username) {
+  const user = adminUserCache.find(u => u.username === username);
+  if (!user) return;
+
+  document.getElementById('assignGuruUsername').value = username;
+  document.getElementById('assignGuruLabel').textContent = `${user.nama} (${username})`;
+  document.getElementById('assignError').textContent = '';
+
+  // Parse kelas yang sudah di-assign
+  let assigned = [];
+  try {
+    const parsed = JSON.parse(user.kelasId);
+    if (Array.isArray(parsed)) assigned = parsed;
+  } catch(e) {
+    if (user.kelasId) assigned = [user.kelasId];
+  }
+
+  const box = document.getElementById('assignKelasCheckboxes');
+  box.innerHTML = '';
+  if (!adminKelasCache.length) {
+    box.innerHTML = '<p style="color:#888;font-size:0.85rem;">Belum ada kelas.</p>';
+  } else {
+    adminKelasCache.forEach(k => {
+      const checked = assigned.includes(k.id) ? 'checked' : '';
+      const lbl = document.createElement('label');
+      lbl.style.cssText = 'display:flex;align-items:center;gap:8px;cursor:pointer;font-size:0.88rem;padding:4px 0;';
+      lbl.innerHTML = `<input type="checkbox" value="${k.id}" ${checked} style="width:16px;height:16px;"/>
+        <span>${k.nama} <small style="color:#888;">(${k.id})</small></span>`;
+      box.appendChild(lbl);
+    });
+  }
+  document.getElementById('modalAssignKelasGuru').classList.remove('hidden');
+}
+
+async function simpanAssignKelasGuru() {
+  const username  = document.getElementById('assignGuruUsername').value;
+  const kelasList = [...document.querySelectorAll('#assignKelasCheckboxes input:checked')].map(c => c.value);
+  try {
+    await API.post('saveGuruKelas', { username, kelasList });
+    closeModal('modalAssignKelasGuru');
+    showToast(`Kelas untuk ${username} disimpan (${kelasList.length} kelas)!`, 'success');
+    await loadAdminData();
+  } catch(e) {}
 }

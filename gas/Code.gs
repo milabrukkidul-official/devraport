@@ -60,6 +60,16 @@ function verifyToken(token) {
   if (hash !== expected) return null;
   return user;
 }
+// Helper: parse kelasId yang bisa berupa string tunggal atau JSON array
+function parseKelasId_(kelasId) {
+  if (!kelasId) return [];
+  try {
+    const parsed = JSON.parse(kelasId);
+    if (Array.isArray(parsed)) return parsed.filter(Boolean);
+  } catch(e) {}
+  return kelasId ? [kelasId] : [];
+}
+
 function isAdmin(token) {
   const u = verifyToken(token);
   return u && u.role === 'admin';
@@ -74,7 +84,14 @@ function canEditNilai(token, kelasId) {
   const u = verifyToken(token);
   if (!u) return false;
   if (u.role === 'admin') return true;
-  return (u.role === 'walikelas' || u.role === 'guruMapel') && u.kelasId === kelasId;
+  if (!kelasId) return false;
+  if (u.role === 'walikelas') return u.kelasId === kelasId;
+  // guruMapel: kelasId bisa berupa JSON array atau string tunggal
+  if (u.role === 'guruMapel') {
+    const kelasList = parseKelasId_(u.kelasId);
+    return kelasList.includes(kelasId);
+  }
+  return false;
 }
 
 // ===== ROUTER =====
@@ -124,15 +141,16 @@ function handleAction_(body) {
       case 'saveUser':      return R(requireAdmin(body.token, () => saveUser_(body)));
       case 'deleteUser':    return R(requireAdmin(body.token, () => deleteUser_(body)));
       case 'resetPassword': return R(requireAdmin(body.token, () => resetPassword_(body)));
+      case 'saveGuruKelas': return R(requireAdmin(body.token, () => saveGuruKelas_(body)));
       case 'saveSetting':   return R(requireAdmin(body.token, () => saveSettingGlobal_(body)));
       case 'saveRombel':    return R(requireAdmin(body.token, () => saveRombel_(body)));
       case 'deleteRombel':  return R(requireAdmin(body.token, () => deleteRombel_(body)));
       case 'saveMapel':     return R(requireAdmin(body.token, () => saveMapel_(body)));
+      // ── Per-kelas write ──
       case 'saveSiswa':     return R(requireKelas(body.token, body.kelasId, () => saveSiswa_(body)));
       case 'deleteSiswa':   return R(requireKelas(body.token, body.kelasId, () => deleteSiswa_(body)));
       case 'importSiswa':   return R(requireKelas(body.token, body.kelasId, () => importSiswa_(body)));
       case 'saveNilai':     return R(requireNilai(body.token, body.kelasId, () => saveNilai_(body)));
-      case 'saveMapel':     return R(requireAdmin(body.token, () => saveMapel_(body)));
       case 'saveKKM':       return R(requireKelas(body.token, body.kelasId, () => saveKKM_(body)));
       case 'saveEkskul':    return R(requireKelas(body.token, body.kelasId, () => saveEkskul_(body)));
       default:              return R({ error: 'Unknown action: ' + body.action });
@@ -163,18 +181,25 @@ function login_(username, password, kelasId) {
   const user = users.find(u => u.username === username && u.password === password);
   if (!user) return { success: false, message: 'Username atau password salah.' };
 
-  // kelasId diambil dari data user di spreadsheet, bukan dari input login
-  const userKelasId = user.role === 'admin' ? '' : (user.kelasId || '');
+  // kelasId: admin = '', walikelas = string, guruMapel = array JSON
+  let userKelasId;
+  if (user.role === 'admin') {
+    userKelasId = '';
+  } else if (user.role === 'guruMapel') {
+    userKelasId = parseKelasId_(user.kelasId); // array
+  } else {
+    userKelasId = user.kelasId || ''; // string
+  }
 
   const token = makeToken_(user.username, user.password);
   return {
     success: true,
     user: {
-      username: user.username,
-      nama:     user.nama,
-      role:     user.role,
-      kelasId:  userKelasId,
-      token:    token
+      username:  user.username,
+      nama:      user.nama,
+      role:      user.role,
+      kelasId:   userKelasId,  // string untuk admin/walikelas, array untuk guruMapel
+      token:     token
     }
   };
 }
@@ -343,6 +368,21 @@ function deleteUser_(body) {
     if (String(data[i][0]) === username) { sh.deleteRow(i + 1); break; }
   }
   return { success: true };
+}
+
+// Simpan daftar kelas untuk guru mapel (array JSON)
+function saveGuruKelas_(body) {
+  const { username, kelasList } = body;
+  if (!username) return { error: 'Username kosong.' };
+  const sh   = getSheet(SH_USERS);
+  const data = sh.getDataRange().getValues();
+  for (let i = 1; i < data.length; i++) {
+    if (String(data[i][0]) === username) {
+      sh.getRange(i + 1, 5).setValue(JSON.stringify(kelasList || []));
+      return { success: true };
+    }
+  }
+  return { error: 'User tidak ditemukan.' };
 }
 
 function resetPassword_(body) {

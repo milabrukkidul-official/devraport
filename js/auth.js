@@ -71,8 +71,9 @@ function showMainApp() {
     showPage('siswa');
     loadSiswa();
   } else {
+    // guruMapel — punya array kelas, tampilkan selector
     showPage('nilai');
-    loadNilai();
+    buildGuruKelasSelector();
   }
 }
 
@@ -110,7 +111,13 @@ function buildNavbar() {
   });
 
   const roleLabel = { admin: 'Admin', walikelas: 'Wali Kelas', guruMapel: 'Guru Mapel' };
-  const kelasInfo = kelasId ? ` — ${kelasId}` : '';
+  // Untuk guru mapel, kelasId adalah array — tampilkan jumlah kelas
+  let kelasInfo = '';
+  if (role === 'guruMapel' && Array.isArray(kelasId)) {
+    kelasInfo = kelasId.length ? ` — ${kelasId.length} kelas` : '';
+  } else if (kelasId) {
+    kelasInfo = ` — ${kelasId}`;
+  }
   document.getElementById('navUserInfo').textContent =
     `👤 ${nama} (${roleLabel[role] || role}${kelasInfo})`;
 }
@@ -123,3 +130,30 @@ window.addEventListener('DOMContentLoaded', () => {
     });
   });
 });
+
+// Guru mapel: bangun selector kelas di halaman nilai
+function buildGuruKelasSelector() {
+  const kelasList = Array.isArray(currentUser.kelasId) ? currentUser.kelasId : [];
+  if (!kelasList.length) {
+    showToast('Anda belum ditugaskan ke kelas manapun. Hubungi admin.', 'error');
+    return;
+  }
+  // Isi selector kelas di halaman nilai
+  const bar = document.getElementById('adminKelasBar-nilai');
+  const sel = document.getElementById('adminKelasSelect-nilai');
+  if (bar && sel) {
+    bar.classList.remove('hidden');
+    sel.innerHTML = '<option value="">-- Pilih Kelas --</option>';
+    kelasList.forEach(kid => {
+      const opt = document.createElement('option');
+      opt.value = kid;
+      opt.textContent = kid;
+      sel.appendChild(opt);
+    });
+    // Jika hanya 1 kelas, langsung pilih
+    if (kelasList.length === 1) {
+      sel.value = kelasList[0];
+      loadNilai();
+    }
+  }
+}

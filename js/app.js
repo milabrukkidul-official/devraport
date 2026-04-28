@@ -51,10 +51,19 @@ function clearGasUrl() {
 // Ambil kelasId yang sedang aktif untuk halaman tertentu
 function getActiveKelasId(page) {
   if (!currentUser) return '';
-  if (currentUser.role !== 'admin') return currentUser.kelasId || '';
-  // Admin: ambil dari selector halaman tersebut
-  const sel = document.getElementById(`adminKelasSelect-${page}`);
-  return sel ? sel.value : '';
+  const role = currentUser.role;
+  // Admin: ambil dari selector halaman
+  if (role === 'admin') {
+    const sel = document.getElementById(`adminKelasSelect-${page}`);
+    return sel ? sel.value : '';
+  }
+  // Guru mapel: kelasId adalah array, ambil dari selector nilai
+  if (role === 'guruMapel') {
+    const sel = document.getElementById(`adminKelasSelect-${page}`);
+    return sel ? sel.value : '';
+  }
+  // Wali kelas: string tunggal
+  return currentUser.kelasId || '';
 }
 
 // Isi semua selector kelas admin dengan daftar kelas dari cache
