@@ -327,15 +327,6 @@ function modalUser(idx) {
   document.getElementById('modalUserTitle').textContent = isEdit ? 'Edit User' : 'Tambah User';
   document.getElementById('mu_idx').value = isEdit ? idx : -1;
 
-  const sel = document.getElementById('mu_kelas');
-  sel.innerHTML = '<option value="">-- Tidak ada kelas --</option>';
-  adminKelasCache.forEach(k => {
-    const opt = document.createElement('option');
-    opt.value = k.id;
-    opt.textContent = `${k.nama} (${k.id})`;
-    sel.appendChild(opt);
-  });
-
   if (isEdit) {
     const u = adminUserCache[idx];
     document.getElementById('mu_username').value    = u.username;
@@ -343,23 +334,17 @@ function modalUser(idx) {
     document.getElementById('mu_password').value    = '';
     document.getElementById('mu_nama').value        = u.nama;
     document.getElementById('mu_role').value        = u.role;
-    document.getElementById('mu_kelas').value       = u.kelasId || '';
   } else {
     document.getElementById('mu_username').value    = '';
     document.getElementById('mu_username').disabled = false;
     document.getElementById('mu_password').value    = '';
     document.getElementById('mu_nama').value        = '';
     document.getElementById('mu_role').value        = 'walikelas';
-    document.getElementById('mu_kelas').value       = '';
   }
-  toggleUserKelas();
   document.getElementById('modalUser').classList.remove('hidden');
 }
 
-function toggleUserKelas() {
-  const role = document.getElementById('mu_role').value;
-  document.getElementById('mu_kelasGroup').style.display = (role === 'admin') ? 'none' : 'flex';
-}
+function toggleUserKelas() {} // tidak dipakai lagi, dibiarkan kosong agar tidak error jika ada referensi lama
 
 async function simpanUser() {
   const idx      = parseInt(document.getElementById('mu_idx').value);
@@ -367,13 +352,13 @@ async function simpanUser() {
   const password = document.getElementById('mu_password').value;
   const nama     = document.getElementById('mu_nama').value.trim();
   const role     = document.getElementById('mu_role').value;
-  const kelasId  = document.getElementById('mu_kelas').value;
 
   if (!username || !nama) { showToast('Username dan Nama wajib diisi!', 'error'); return; }
   if (idx === -1 && !password) { showToast('Password wajib diisi untuk user baru!', 'error'); return; }
 
   try {
-    await API.post('saveUser', { user: JSON.stringify({ username, password, nama, role, kelasId }), isNew: idx === -1 });
+    // kelasId tidak dikirim dari sini — dikelola lewat Kelola Kelas
+    await API.post('saveUser', { user: JSON.stringify({ username, password, nama, role, kelasId: '' }), isNew: idx === -1 });
     closeModal('modalUser');
     showToast('User disimpan!', 'success');
     await loadAdminData();
