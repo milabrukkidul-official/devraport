@@ -4,7 +4,6 @@ let adminKelasCache = [];
 let adminUserCache  = [];
 
 async function loadAdminData() {
-  // Pastikan token sudah ada sebelum request
   const token = API.getToken();
   if (!token) {
     showToast('Sesi tidak valid, silakan login ulang.', 'error');
@@ -19,6 +18,8 @@ async function loadAdminData() {
     adminUserCache  = uRes.users || [];
     renderTabelKelas();
     renderTabelUser();
+    // Isi selector kelas di semua halaman data
+    onKelasListLoaded(adminKelasCache);
   } catch(e) {}
 }
 

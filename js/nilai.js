@@ -3,7 +3,8 @@
 let nilaiData = { mapel: [], siswa: [], nilai: [] };
 
 async function loadNilai() {
-  const kelasId = currentUser?.kelasId || '';
+  const kelasId = getActiveKelasId('nilai');
+  if (!kelasId) { showToast('Pilih kelas terlebih dahulu!', 'error'); return; }
   try {
     const data = await API.call('getNilai', { kelasId });
     nilaiData = data;
@@ -84,7 +85,8 @@ function hapusMapel(mi) {
 }
 
 async function saveNilai() {
-  const kelasId = currentUser?.kelasId || '';
+  const kelasId = getActiveKelasId('nilai');
+  if (!kelasId) { showToast('Pilih kelas terlebih dahulu!', 'error'); return; }
   try {
     await API.post('saveNilai', {
       kelasId,

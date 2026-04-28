@@ -3,7 +3,8 @@
 let siswaCacheList = [];
 
 async function loadSiswa() {
-  const kelasId = currentUser?.kelasId || '';
+  const kelasId = getActiveKelasId('siswa');
+  if (!kelasId) { showToast('Pilih kelas terlebih dahulu!', 'error'); return; }
   try {
     const data = await API.call('getSiswa', { kelasId });
     siswaCacheList = data.siswa || [];
@@ -63,7 +64,8 @@ function editSiswa(idx) {
 }
 
 async function simpanSiswa() {
-  const kelasId = currentUser?.kelasId || '';
+  const kelasId = getActiveKelasId('siswa');
+  if (!kelasId) { showToast('Pilih kelas terlebih dahulu!', 'error'); return; }
   const idx = parseInt(document.getElementById('ms_rowIndex').value);
   const siswa = {
     nisn:        document.getElementById('ms_nisn').value.trim(),
@@ -86,7 +88,8 @@ async function simpanSiswa() {
 
 async function hapusSiswa(idx) {
   if (!confirm('Hapus data siswa ini?')) return;
-  const kelasId = currentUser?.kelasId || '';
+  const kelasId = getActiveKelasId('siswa');
+  if (!kelasId) return;
   try {
     await API.post('deleteSiswa', { kelasId, rowIndex: idx });
     showToast('Data siswa dihapus!', 'success');

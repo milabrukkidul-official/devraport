@@ -4,7 +4,8 @@
 let cetakCache = {};
 
 async function loadCetakData() {
-  const kelasId = currentUser?.kelasId || '';
+  const kelasId = getActiveKelasId('cetak');
+  if (!kelasId) { showToast('Pilih kelas terlebih dahulu!', 'error'); return; }
   try {
     // Ambil semua data paralel, termasuk info kelas dari daftar kelas
     const [settingRes, siswaRes, nilaiRes, kkmRes, ekskulRes, kelasRes] = await Promise.all([

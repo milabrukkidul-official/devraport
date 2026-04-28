@@ -46,6 +46,44 @@ function clearGasUrl() {
   showToast('Override dihapus, menggunakan GAS_URL dari api.js', 'success');
 }
 
+// ===== KELAS AKTIF (admin bisa pilih kelas, wali kelas otomatis) =====
+
+// Ambil kelasId yang sedang aktif untuk halaman tertentu
+function getActiveKelasId(page) {
+  if (!currentUser) return '';
+  if (currentUser.role !== 'admin') return currentUser.kelasId || '';
+  // Admin: ambil dari selector halaman tersebut
+  const sel = document.getElementById(`adminKelasSelect-${page}`);
+  return sel ? sel.value : '';
+}
+
+// Isi semua selector kelas admin dengan daftar kelas dari cache
+function populateAdminKelasSelectors() {
+  if (!currentUser || currentUser.role !== 'admin') return;
+  const pages = ['setting','siswa','nilai','ekskul','kkm','cetak'];
+  pages.forEach(page => {
+    const bar = document.getElementById(`adminKelasBar-${page}`);
+    const sel = document.getElementById(`adminKelasSelect-${page}`);
+    if (!bar || !sel) return;
+    bar.classList.remove('hidden');
+    const prev = sel.value;
+    sel.innerHTML = '<option value="">-- Pilih Kelas --</option>';
+    (window._kelasList || []).forEach(k => {
+      const opt = document.createElement('option');
+      opt.value = k.id;
+      opt.textContent = `${k.nama} (${k.id})`;
+      if (k.id === prev) opt.selected = true;
+      sel.appendChild(opt);
+    });
+  });
+}
+
+// Dipanggil setelah loadAdminData berhasil
+function onKelasListLoaded(kelasList) {
+  window._kelasList = kelasList || [];
+  populateAdminKelasSelectors();
+}
+
 // ===== HELPERS =====
 function formatTanggal(dateStr) {
   if (!dateStr) return '';

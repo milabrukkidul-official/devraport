@@ -190,7 +190,8 @@ function previewXlsSiswa() {
 
 async function importXlsSiswa() {
   if (!xlsSiswaParsed.length) return;
-  const kelasId = currentUser?.kelasId || '';
+  const kelasId = getActiveKelasId('siswa');
+  if (!kelasId) { showToast('Pilih kelas terlebih dahulu!', 'error'); return; }
   try {
     await API.post('importSiswa', { kelasId, siswaList: JSON.stringify(xlsSiswaParsed) });
     closeModal('modalUploadSiswa');
@@ -291,7 +292,8 @@ function previewXlsNilai() {
 
 async function importXlsNilai() {
   if (!xlsNilaiParsed.nilai.length) return;
-  const kelasId = currentUser?.kelasId || '';
+  const kelasId = getActiveKelasId('nilai');
+  if (!kelasId) { showToast('Pilih kelas terlebih dahulu!', 'error'); return; }
 
   const siswa = siswaCacheList;
   if (!siswa.length) {

@@ -3,7 +3,8 @@
 let ekskulData = { kegiatan: [], siswa: [], nilai: [] };
 
 async function loadEkskul() {
-  const kelasId = currentUser?.kelasId || '';
+  const kelasId = getActiveKelasId('ekskul');
+  if (!kelasId) { showToast('Pilih kelas terlebih dahulu!', 'error'); return; }
   try {
     const data = await API.call('getEkskul', { kelasId });
     ekskulData = data;
@@ -68,7 +69,8 @@ function hapusKegiatan(ki) {
 }
 
 async function saveEkskul() {
-  const kelasId = currentUser?.kelasId || '';
+  const kelasId = getActiveKelasId('ekskul');
+  if (!kelasId) { showToast('Pilih kelas terlebih dahulu!', 'error'); return; }
   try {
     await API.post('saveEkskul', {
       kelasId,

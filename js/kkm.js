@@ -4,7 +4,8 @@ let kkmData = {};
 let kkmMapelList = [];
 
 async function loadKKM() {
-  const kelasId = currentUser?.kelasId || '';
+  const kelasId = getActiveKelasId('kkm');
+  if (!kelasId) { showToast('Pilih kelas terlebih dahulu!', 'error'); return; }
   try {
     const [kkmRes, nilaiRes] = await Promise.all([
       API.call('getKKM', { kelasId }),
@@ -45,7 +46,8 @@ function updateKKM(mapel, val) {
 }
 
 async function saveKKM() {
-  const kelasId = currentUser?.kelasId || '';
+  const kelasId = getActiveKelasId('kkm');
+  if (!kelasId) { showToast('Pilih kelas terlebih dahulu!', 'error'); return; }
   try {
     await API.post('saveKKM', { kelasId, kkm: JSON.stringify(kkmData) });
     showToast('KKM disimpan!', 'success');

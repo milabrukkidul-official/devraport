@@ -119,6 +119,10 @@
 
   <!-- ===== SETTING KELAS ===== -->
   <div id="page-setting" class="page">
+    <div id="adminKelasBar-setting" class="admin-kelas-bar hidden">
+      <label>🏫 Kelas:</label>
+      <select id="adminKelasSelect-setting" onchange="loadSetting()"></select>
+    </div>
     <div class="page-header">
       <h2>⚙️ Setting Kelas: <span id="settingKelasLabel"></span></h2>
       <div class="btn-group">
@@ -154,6 +158,10 @@
 
   <!-- ===== DATA SISWA ===== -->
   <div id="page-siswa" class="page">
+    <div id="adminKelasBar-siswa" class="admin-kelas-bar hidden">
+      <label>🏫 Kelas:</label>
+      <select id="adminKelasSelect-siswa" onchange="loadSiswa()"></select>
+    </div>
     <div class="page-header">
       <h2>👤 Data Siswa</h2>
       <div class="btn-group">
@@ -195,6 +203,10 @@
 
   <!-- ===== REKAP NILAI ===== -->
   <div id="page-nilai" class="page">
+    <div id="adminKelasBar-nilai" class="admin-kelas-bar hidden">
+      <label>🏫 Kelas:</label>
+      <select id="adminKelasSelect-nilai" onchange="loadNilai()"></select>
+    </div>
     <div class="page-header">
       <h2>📊 Rekap Nilai</h2>
       <div class="btn-group">
@@ -210,6 +222,10 @@
 
   <!-- ===== EKSTRAKURIKULER ===== -->
   <div id="page-ekskul" class="page">
+    <div id="adminKelasBar-ekskul" class="admin-kelas-bar hidden">
+      <label>🏫 Kelas:</label>
+      <select id="adminKelasSelect-ekskul" onchange="loadEkskul()"></select>
+    </div>
     <div class="page-header">
       <h2>🏆 Ekstrakurikuler</h2>
       <div class="btn-group">
@@ -223,6 +239,10 @@
 
   <!-- ===== KKM ===== -->
   <div id="page-kkm" class="page">
+    <div id="adminKelasBar-kkm" class="admin-kelas-bar hidden">
+      <label>🏫 Kelas:</label>
+      <select id="adminKelasSelect-kkm" onchange="loadKKM()"></select>
+    </div>
     <div class="page-header">
       <h2>📌 KKM</h2>
       <div class="btn-group">
@@ -235,6 +255,10 @@
 
   <!-- ===== CETAK RAPOR ===== -->
   <div id="page-cetak" class="page">
+    <div id="adminKelasBar-cetak" class="admin-kelas-bar hidden no-print">
+      <label>🏫 Kelas:</label>
+      <select id="adminKelasSelect-cetak" onchange="loadCetakData()"></select>
+    </div>
     <div class="page-header no-print">
       <h2>🖨️ Cetak Rapor</h2>
       <div class="btn-group">

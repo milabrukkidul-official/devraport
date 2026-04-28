@@ -4,7 +4,7 @@
 let settingAutoSaveTimer = null;
 
 function getKelasId() {
-  return currentUser?.kelasId || '';
+  return getActiveKelasId('setting');
 }
 
 async function loadSetting() {
