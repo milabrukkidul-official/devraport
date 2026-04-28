@@ -161,4 +161,12 @@ function buildNavbar() {
 }
 
 // Jalankan saat halaman load
-window.addEventListener('DOMContentLoaded', initApp);
+window.addEventListener('DOMContentLoaded', () => {
+  initApp();
+  // Enter di field login → langsung login
+  ['loginUser', 'loginPass', 'loginKelas'].forEach(id => {
+    document.getElementById(id)?.addEventListener('keydown', e => {
+      if (e.key === 'Enter') doLogin();
+    });
+  });
+});
