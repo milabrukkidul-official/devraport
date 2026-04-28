@@ -468,10 +468,10 @@
 
 <!-- Modal Rombel -->
 <div id="modalRombel" class="modal hidden">
-  <div class="modal-content" style="max-width:560px;">
+  <div class="modal-content" style="max-width:640px;">
     <h3 id="modalRombelTitle">Tambah Rombel</h3>
     <input type="hidden" id="mr_id_hidden"/>
-    <div class="form-grid">
+    <div class="form-grid" style="margin-bottom:14px;">
       <div class="form-group">
         <label>ID Rombel <small style="color:#888;">(unik, tanpa spasi)</small></label>
         <input type="text" id="mr_id" placeholder="rombel_1"/>
@@ -481,15 +481,35 @@
         <input type="text" id="mr_nama" placeholder="Kelas 1"/>
       </div>
     </div>
-    <div style="margin-top:14px;">
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
-        <label style="font-weight:600;font-size:0.85rem;">Daftar Mata Pelajaran</label>
-        <button class="btn-success" onclick="tambahMapelRombel()" style="padding:4px 10px;font-size:0.8rem;">➕ Tambah</button>
+
+    <!-- Referensi Mapel -->
+    <div style="background:#f0f9ff;border:1px solid #bae6fd;border-radius:8px;padding:12px;margin-bottom:14px;">
+      <p style="font-weight:600;font-size:0.85rem;color:#0369a1;margin-bottom:10px;">📚 Pilih dari Referensi Mata Pelajaran</p>
+
+      <p style="font-size:0.78rem;color:#555;margin-bottom:6px;font-weight:600;">— Mata Pelajaran Utama —</p>
+      <div id="refMapelUtama" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px;"></div>
+
+      <p style="font-size:0.78rem;color:#555;margin-bottom:6px;font-weight:600;">— Muatan Lokal (Mulok) —</p>
+      <div id="refMapelMulok" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px;"></div>
+
+      <p style="font-size:0.78rem;color:#555;margin-bottom:6px;font-weight:600;">— Lainnya (ketik manual) —</p>
+      <div style="display:flex;gap:6px;">
+        <input type="text" id="mr_mapelCustom" placeholder="Nama mata pelajaran..." style="flex:1;padding:6px 10px;border:1px solid #d1d5db;border-radius:6px;font-size:0.85rem;"/>
+        <button class="btn-success" onclick="tambahMapelCustomRombel()" style="padding:6px 12px;font-size:0.83rem;">➕ Tambah</button>
       </div>
-      <div id="rombelMapelList" style="display:flex;flex-direction:column;gap:6px;max-height:260px;overflow-y:auto;padding:4px;"></div>
     </div>
+
+    <!-- Daftar mapel yang sudah dipilih -->
+    <div>
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+        <label style="font-weight:600;font-size:0.85rem;">✅ Daftar Mapel Terpilih <span id="mr_jumlah" style="color:#888;font-weight:normal;"></span></label>
+        <button onclick="kosongkanMapelRombel()" style="background:none;border:none;color:#dc2626;cursor:pointer;font-size:0.8rem;">🗑️ Kosongkan</button>
+      </div>
+      <div id="rombelMapelList" style="display:flex;flex-direction:column;gap:5px;max-height:220px;overflow-y:auto;padding:4px;border:1px solid #e5e7eb;border-radius:6px;background:#fafafa;"></div>
+    </div>
+
     <div class="modal-actions">
-      <button class="btn-success" onclick="simpanRombel()">💾 Simpan</button>
+      <button class="btn-success" onclick="simpanRombel()">💾 Simpan Rombel</button>
       <button class="btn-danger"  onclick="closeModal('modalRombel')">✖ Batal</button>
     </div>
   </div>
