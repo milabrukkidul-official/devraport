@@ -71,11 +71,11 @@ function deskripsiPredikat(predikat, panggilan, mapel) {
   return `Ananda ${panggilan} ${ket[predikat] || 'cukup'} dalam memahami pelajaran ${mapel}.`;
 }
 
-function adminTab(name) {
+function adminTab(name, btn) {
   document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
   document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
   document.getElementById('adminTab-' + name).classList.add('active');
-  event.target.classList.add('active');
+  if (btn) btn.classList.add('active');
 }
 
 // Preview KOP
