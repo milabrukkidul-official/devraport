@@ -1,7 +1,7 @@
 // ===== API LAYER =====
 // ⚠️  GANTI URL INI dengan URL Google Apps Script Web App Anda.
 //     Setelah diisi, tidak perlu diubah lagi.
-const GAS_URL = 'https://script.google.com/macros/s/AKfycbyHgdNtLBeznoZIgfA3ijnut-12z0XeqKpKE1PGrxW1ONM5pvYmyiKBMlrh5-mYx9oNfQ/exec';
+const GAS_URL = 'https://script.google.com/macros/s/AKfycbyLLBo0pqj-DxlM2-enhOEJoznz6Gf_5RI1MYp-sf_AGdi1bBA_SWKNjlxWMsfBSfwumA/exec';
 
 const API = {
   getUrl() {
@@ -45,7 +45,7 @@ const API = {
     return this.call(action, body);
   },
 
-  async login(username, password, kelasId) {
+  async login(username, password) {
     const url = this.getUrl();
     if (!url || url.includes('GANTI_DENGAN')) {
       showToast('URL Apps Script belum diset!', 'error');
@@ -53,10 +53,10 @@ const API = {
     }
     showLoading(true);
     try {
-      const res  = await fetch(url, {
+      const res = await fetch(url, {
         method:  'POST',
         headers: { 'Content-Type': 'text/plain' },
-        body:    JSON.stringify({ action: 'login', username, password, kelasId })
+        body:    JSON.stringify({ action: 'login', username, password })
       });
       return await res.json();
     } catch (e) {
@@ -67,7 +67,7 @@ const API = {
     }
   },
 
-  // Kelas publik untuk dropdown login — tidak butuh token, GET biasa
+  // Kelas publik — masih dipakai di cetak rapor untuk ambil info kelas
   async getKelasPublic() {
     const url = this.getUrl();
     if (!url || url.includes('GANTI_DENGAN')) return { kelas: [] };
