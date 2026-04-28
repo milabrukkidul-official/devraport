@@ -277,8 +277,11 @@
         <input type="text" id="mk_nama" placeholder="contoh: Kelas 1A"/>
       </div>
       <div class="form-group">
-        <label>Wali Kelas <small style="color:#888;">(username)</small></label>
-        <input type="text" id="mk_wali" placeholder="username wali kelas (opsional)"/>
+        <label>Wali Kelas</label>
+        <select id="mk_wali">
+          <option value="">-- Pilih Wali Kelas --</option>
+        </select>
+        <small style="color:#888;">Hanya menampilkan user dengan role Wali Kelas</small>
       </div>
       <div class="form-group">
         <label>Semester</label>
