@@ -49,16 +49,31 @@
       <h2>🛠️ Panel Admin</h2>
     </div>
     <div class="tab-bar">
-      <button class="tab-btn active" onclick="adminTab('kelas', this)">🏫 Kelola Kelas</button>
-      <button class="tab-btn" onclick="adminTab('rombel', this)">📦 Rombel</button>
+      <button class="tab-btn active" onclick="adminTab('kelas', this)">🏫 Kelola Kelas & Rombel</button>
       <button class="tab-btn" onclick="adminTab('user', this)">👥 Kelola User</button>
       <button class="tab-btn" onclick="adminTab('gasurl', this)">🔗 URL Apps Script</button>
     </div>
 
-    <!-- Tab Kelas -->
+    <!-- Tab Kelas & Rombel (digabung) -->
     <div id="adminTab-kelas" class="tab-content active">
+      <!-- ROMBEL -->
       <div class="page-header" style="margin-top:16px;">
-        <h3>Daftar Kelas</h3>
+        <h3>📦 Rombongan Belajar (Rombel)</h3>
+        <button class="btn-success" onclick="modalRombel()">➕ Tambah Rombel</button>
+      </div>
+      <div class="info-box" style="margin-bottom:12px;">
+        <p style="font-size:0.85rem;">Buat Rombel terlebih dahulu (misal: <em>Kelas 1, Kelas 2</em>) beserta daftar mata pelajarannya. Lalu tambahkan kelas (1A, 1B, 1C) dan pilih rombel yang sesuai — mapel otomatis diterapkan.</p>
+      </div>
+      <div class="table-wrapper" style="margin-bottom:24px;">
+        <table>
+          <thead><tr><th>No</th><th>ID Rombel</th><th>Nama Rombel</th><th>Daftar Mapel</th><th>Aksi</th></tr></thead>
+          <tbody id="bodyRombel"></tbody>
+        </table>
+      </div>
+
+      <!-- KELAS -->
+      <div class="page-header">
+        <h3>🏫 Daftar Kelas</h3>
         <div class="btn-group">
           <button class="btn-success" onclick="modalKelas()">➕ Tambah Kelas</button>
           <button class="btn-primary" onclick="modalBulkKelas()">📋 Tambah Banyak Kelas</button>
@@ -66,25 +81,8 @@
       </div>
       <div class="table-wrapper">
         <table id="tblKelas">
-          <thead><tr><th>No</th><th>ID Kelas</th><th>Nama Kelas</th><th>Wali Kelas</th><th>Semester</th><th>Tahun Pelajaran</th><th>Aksi</th></tr></thead>
+          <thead><tr><th>No</th><th>Nama Kelas</th><th>Rombel</th><th>Wali Kelas</th><th>Aksi</th></tr></thead>
           <tbody id="bodyKelas"></tbody>
-        </table>
-      </div>
-    </div>
-
-    <!-- Tab Rombel -->
-    <div id="adminTab-rombel" class="tab-content">
-      <div class="page-header" style="margin-top:16px;">
-        <h3>📦 Rombongan Belajar (Rombel)</h3>
-        <button class="btn-success" onclick="modalRombel()">➕ Tambah Rombel</button>
-      </div>
-      <div class="info-box" style="margin-bottom:14px;">
-        <p style="font-size:0.85rem;">Rombel adalah grup kelas yang berbagi daftar mata pelajaran yang sama. Setelah membuat rombel, gunakan tombol <strong>🏫 Terapkan ke Kelas</strong> untuk menerapkan mapel rombel ke kelas-kelas yang sesuai.</p>
-      </div>
-      <div class="table-wrapper">
-        <table>
-          <thead><tr><th>No</th><th>ID Rombel</th><th>Nama Rombel</th><th>Daftar Mapel</th><th>Aksi</th></tr></thead>
-          <tbody id="bodyRombel"></tbody>
         </table>
       </div>
     </div>
@@ -291,35 +289,26 @@
 
 <!-- Modal Kelas (Tambah / Edit satu kelas) -->
 <div id="modalKelas" class="modal hidden">
-  <div class="modal-content" style="max-width:560px;">
+  <div class="modal-content" style="max-width:480px;">
     <h3 id="modalKelasTitle">Tambah Kelas</h3>
     <input type="hidden" id="mk_id"/>
     <div class="form-grid">
-      <div class="form-group">
-        <label>ID Kelas <small style="color:#888;">(unik, huruf/angka/underscore)</small></label>
-        <input type="text" id="mk_id_input" placeholder="contoh: kelas_1a" oninput="autoNamaKelas()"/>
-      </div>
-      <div class="form-group">
+      <div class="form-group full">
         <label>Nama Kelas</label>
         <input type="text" id="mk_nama" placeholder="contoh: Kelas 1A"/>
       </div>
-      <div class="form-group">
+      <div class="form-group full">
+        <label>Rombel <small style="color:#888;">(menentukan daftar mata pelajaran)</small></label>
+        <select id="mk_rombel">
+          <option value="">-- Pilih Rombel --</option>
+        </select>
+      </div>
+      <div class="form-group full">
         <label>Wali Kelas</label>
         <select id="mk_wali">
           <option value="">-- Pilih Wali Kelas --</option>
         </select>
         <small style="color:#888;">Hanya menampilkan user dengan role Wali Kelas</small>
-      </div>
-      <div class="form-group">
-        <label>Semester</label>
-        <select id="mk_semester">
-          <option value="I (GANJIL)">I (GANJIL)</option>
-          <option value="II (GENAP)">II (GENAP)</option>
-        </select>
-      </div>
-      <div class="form-group">
-        <label>Tahun Pelajaran</label>
-        <input type="text" id="mk_tahun" placeholder="2024/2025"/>
       </div>
     </div>
     <div class="modal-actions">
@@ -331,37 +320,17 @@
 
 <!-- Modal Tambah Banyak Kelas Sekaligus -->
 <div id="modalBulkKelas" class="modal hidden">
-  <div class="modal-content" style="max-width:700px;">
+  <div class="modal-content" style="max-width:620px;">
     <h3>➕ Tambah Banyak Kelas Sekaligus</h3>
-    <p style="font-size:0.85rem;color:#555;margin-bottom:14px;">
-      Isi tabel di bawah. Klik <strong>+ Baris</strong> untuk menambah kelas. Semester dan Tahun Pelajaran berlaku untuk semua baris kecuali diubah per baris.
-    </p>
-    <div style="display:flex;gap:10px;align-items:center;margin-bottom:12px;flex-wrap:wrap;">
-      <div class="form-group" style="flex:1;min-width:140px;">
-        <label>Semester (default)</label>
-        <select id="bk_semesterDefault">
-          <option value="I (GANJIL)">I (GANJIL)</option>
-          <option value="II (GENAP)">II (GENAP)</option>
-        </select>
-      </div>
-      <div class="form-group" style="flex:1;min-width:120px;">
-        <label>Tahun Pelajaran (default)</label>
-        <input type="text" id="bk_tahunDefault" placeholder="2024/2025"/>
-      </div>
-      <div style="padding-top:20px;">
-        <button class="btn-primary" onclick="applyDefaultBulk()">↩ Terapkan ke Semua</button>
-      </div>
-    </div>
+    <p style="font-size:0.85rem;color:#555;margin-bottom:14px;">Isi nama kelas, pilih rombel dan wali kelas. Semester & Tahun Pelajaran diambil dari Setting global.</p>
     <div style="overflow-x:auto;">
       <table style="width:100%;border-collapse:collapse;font-size:0.83rem;">
         <thead>
           <tr style="background:#1e3a5f;color:#fff;">
             <th style="padding:7px 8px;width:32px;">No</th>
-            <th style="padding:7px 8px;">ID Kelas *</th>
             <th style="padding:7px 8px;">Nama Kelas *</th>
-            <th style="padding:7px 8px;">Wali Kelas (username)</th>
-            <th style="padding:7px 8px;width:120px;">Semester</th>
-            <th style="padding:7px 8px;width:100px;">Tahun</th>
+            <th style="padding:7px 8px;">Rombel *</th>
+            <th style="padding:7px 8px;">Wali Kelas</th>
             <th style="padding:7px 8px;width:36px;"></th>
           </tr>
         </thead>

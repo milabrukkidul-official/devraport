@@ -29,9 +29,8 @@ async function loadCetakData() {
       kkm:       kkmRes.kkm          || {},
       kegiatan:  ekskulRes.kegiatan  || [],
       ekskul:    ekskulRes.nilai     || [],
-      // Data kelas otomatis dari _KELAS sheet
       namaKelas: kelasInfo.nama      || '',
-      namaWali:  kelasInfo.waliNama  || kelasInfo.wali || '',  // waliNama = nama lengkap wali kelas
+      namaWali:  kelasInfo.waliNama  || kelasInfo.wali || '',
     };
     populateSiswaSelect();
     showToast('Data rapor dimuat!', 'success');

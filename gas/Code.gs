@@ -206,8 +206,8 @@ function login_(username, password, kelasId) {
 
 // ============================================================
 // KELAS
-// Kolom _KELAS: id | nama | wali (username) | semester | tahun | waliNama
-// waliNama = nama lengkap wali kelas (diambil otomatis dari _USERS saat saveKelas)
+// Kolom _KELAS: id | nama | rombelId | wali (username) | waliNama
+// Semester & Tahun Pelajaran diambil dari _SETTING global
 // ============================================================
 function getKelasPublic_() {
   const sh = getSheet(SH_KELAS);
@@ -216,10 +216,9 @@ function getKelasPublic_() {
   const kelas = data.slice(1).map(r => ({
     id:       String(r[0] || ''),
     nama:     String(r[1] || ''),
-    wali:     String(r[2] || ''),
-    semester: String(r[3] || ''),
-    tahun:    String(r[4] || ''),
-    waliNama: String(r[5] || '')   // nama lengkap wali kelas
+    rombelId: String(r[2] || ''),
+    wali:     String(r[3] || ''),
+    waliNama: String(r[4] || '')
   })).filter(k => k.id);
   return { kelas };
 }
@@ -229,12 +228,12 @@ function saveKelas_(body) {
   const sh = getSheet(SH_KELAS);
   const data = sh.getDataRange().getValues();
 
-  // Cari nama lengkap wali kelas dari _USERS
+  // Cari nama lengkap wali kelas
   let waliNama = '';
   if (k.wali) {
     const { users } = getUsers_();
-    const waliUser = users.find(u => u.username === k.wali);
-    if (waliUser) waliNama = waliUser.nama;
+    const wu = users.find(u => u.username === k.wali);
+    if (wu) waliNama = wu.nama;
   }
 
   let found = -1;
@@ -242,59 +241,51 @@ function saveKelas_(body) {
     if (String(data[i][0]) === k.id) { found = i + 1; break; }
   }
 
-  // Jika edit kelas dan wali berubah, lepas kelasId dari wali lama
+  // Jika edit dan wali berubah, lepas kelasId dari wali lama
   if (found > 0) {
-    const waliLama = String(data[found-1][2] || '');
-    if (waliLama && waliLama !== k.wali) {
-      updateKelasIdUser_(waliLama, ''); // lepas kelas dari wali lama
-    }
+    const waliLama = String(data[found-1][3] || '');
+    if (waliLama && waliLama !== k.wali) updateKelasIdUser_(waliLama, '');
   }
 
-  const row = [k.id, k.nama, k.wali, k.semester, k.tahun, waliNama];
+  const row = [k.id, k.nama, k.rombelId || '', k.wali || '', waliNama];
   if (found > 0) {
-    sh.getRange(found, 1, 1, 6).setValues([row]);
+    sh.getRange(found, 1, 1, 5).setValues([row]);
   } else {
     sh.appendRow(row);
-    // Inisialisasi setting default untuk kelas baru
-    initSettingKelas_(k.id, k.semester, k.tahun);
+    initSettingKelas_(k.id);
+    // Terapkan mapel dari rombel ke kelas baru otomatis
+    if (k.rombelId) applyRombelToKelas_(k.rombelId, k.id);
   }
 
-  // Simpan kelasId ke user wali kelas yang baru dipilih
-  if (k.wali) {
-    updateKelasIdUser_(k.wali, k.id);
-  }
-
+  if (k.wali) updateKelasIdUser_(k.wali, k.id);
   return { success: true };
 }
 
-// Update kolom kelasId di _USERS untuk username tertentu
+// Terapkan mapel rombel ke kelas saat kelas baru dibuat
+function applyRombelToKelas_(rombelId, kelasId) {
+  const { rombel } = getRombel_();
+  const r = rombel.find(r => r.id === rombelId);
+  if (!r || !r.mapel.length) return;
+  saveMapel_({ kelasId, mapel: JSON.stringify(r.mapel) });
+}
+
 function updateKelasIdUser_(username, kelasId) {
   if (!username) return;
   const sh   = getSheet(SH_USERS);
   const data = sh.getDataRange().getValues();
   for (let i = 1; i < data.length; i++) {
     if (String(data[i][0]) === username) {
-      sh.getRange(i + 1, 5).setValue(kelasId); // kolom 5 = kelasId
+      sh.getRange(i + 1, 5).setValue(kelasId);
       break;
     }
   }
 }
 
-// Inisialisasi setting default saat kelas baru dibuat
-function initSettingKelas_(kelasId, semester, tahun) {
+// Inisialisasi setting default saat kelas baru dibuat (tanpa semester/tahun — dari global)
+function initSettingKelas_(kelasId) {
   const sh = getSheet(shName(kelasId, 'SETTING'));
   if (sh.getLastRow() === 0) {
-    const defaults = [
-      ['urlKop',         ''],
-      ['namaSatuan',     ''],
-      ['namaKepala',     ''],
-      ['semester',       semester || 'I (GANJIL)'],
-      ['tahunPelajaran', tahun    || ''],
-      ['judul',          'LAPORAN HASIL BELAJAR SISWA'],
-      ['tempatRapor',    ''],
-      ['tglRapor',       ''],
-    ];
-    sh.getRange(1, 1, defaults.length, 2).setValues(defaults);
+    sh.getRange(1,1,1,2).setValues([['_init','1']]);
   }
 }
 
@@ -303,7 +294,13 @@ function deleteKelas_(body) {
   const sh = getSheet(SH_KELAS);
   const data = sh.getDataRange().getValues();
   for (let i = data.length - 1; i >= 1; i--) {
-    if (String(data[i][0]) === kelasId) { sh.deleteRow(i + 1); break; }
+    if (String(data[i][0]) === kelasId) {
+      // Lepas wali kelas
+      const wali = String(data[i][3] || '');
+      if (wali) updateKelasIdUser_(wali, '');
+      sh.deleteRow(i + 1);
+      break;
+    }
   }
   ['_SETTING','_SISWA','_NILAI','_KKM','_EKSKUL'].forEach(suffix => {
     const s = SS.getSheetByName(kelasId + suffix);
@@ -676,7 +673,7 @@ function setupSheets() {
   }
   const shKelas = getSheet(SH_KELAS);
   if (shKelas.getLastRow() === 0) {
-    shKelas.appendRow(['id','nama','wali','semester','tahun','waliNama']);
+    shKelas.appendRow(['id','nama','rombelId','wali','waliNama']);
   }
   const shSetting = getSheet(SH_SETTING);
   if (shSetting.getLastRow() === 0) {
