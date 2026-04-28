@@ -68,6 +68,8 @@ function showMainApp() {
     loadAdminData();
     loadSetting();
   } else if (currentUser.role === 'walikelas') {
+    // Sembunyikan selector rombel untuk wali kelas
+    hideRombelSelectorsForWaliKelas();
     showPage('siswa');
     loadSiswa();
   } else {
