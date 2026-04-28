@@ -127,7 +127,8 @@ function handleAction_(body) {
       
       // ── Admin read ──
       case 'getUsers':      return R(requireAdmin(body.token, () => getUsers_()));
-      case 'getRombel':     return R(requireAdmin(body.token, () => getRombel_()));
+      // getRombel: izinkan semua user yang login (wali kelas perlu data ini untuk cetak rapor)
+      case 'getRombel':     return R(verifyToken(body.token) ? getRombel_() : { error: 'Akses ditolak' });
       
       // ── Setting global (admin only, tanpa rombelId) ──
       case 'getSetting':    return R(requireAdmin(body.token, () => getSettingGlobal_()));
@@ -347,8 +348,16 @@ function saveRombel_(body) {
   }
   
   let found = -1;
+  let mapelLama = [];
   for (let i = 1; i < data.length; i++) {
-    if (String(data[i][0]) === r.id) { found = i + 1; break; }
+    if (String(data[i][0]) === r.id) { 
+      found = i + 1;
+      // Simpan mapel lama untuk cek perubahan
+      try {
+        mapelLama = data[i][4] ? JSON.parse(data[i][4]) : [];
+      } catch(e) {}
+      break;
+    }
   }
   
   // Jika edit dan wali berubah, lepas rombelId dari wali lama
@@ -360,6 +369,10 @@ function saveRombel_(body) {
   const row = [r.id, r.nama, r.wali || '', waliNama, JSON.stringify(r.mapel || [])];
   if (found > 0) {
     sh.getRange(found, 1, 1, 5).setValues([row]);
+    // Jika mapel berubah, update sheet nilai
+    if (JSON.stringify(mapelLama) !== JSON.stringify(r.mapel)) {
+      syncMapelToNilai_(r.id, r.mapel);
+    }
   } else {
     sh.appendRow(row);
     initSettingRombel_(r.id);
@@ -369,6 +382,46 @@ function saveRombel_(body) {
   if (r.wali) updateRombelIdUser_(r.wali, r.id);
   
   return { success: true };
+}
+
+// Sinkronisasi mapel rombel ke sheet nilai (pertahankan nilai yang sudah ada)
+function syncMapelToNilai_(rombelId, mapelBaru) {
+  const existing = getNilai_(rombelId);
+  const mapelLama = existing.mapel || [];
+  const nilaiLama = existing.nilai || [];
+  const siswa     = existing.siswa || [];
+  
+  if (!siswa.length) return; // Tidak ada siswa, skip
+  
+  // Petakan nilai lama ke mapel baru berdasarkan nama mapel
+  const nilaiMapped = siswa.map((s, si) => {
+    const rowLama = nilaiLama[si] || {};
+    const rowBaru = {};
+    mapelBaru.forEach((m, mi) => {
+      const idxLama = mapelLama.indexOf(m);
+      rowBaru[mi] = idxLama >= 0 && rowLama[idxLama] !== undefined ? rowLama[idxLama] : '';
+    });
+    rowBaru['sakit'] = rowLama['sakit'] || 0;
+    rowBaru['ijin']  = rowLama['ijin']  || 0;
+    rowBaru['alpa']  = rowLama['alpa']  || 0;
+    return rowBaru;
+  });
+  
+  // Tulis ulang sheet dengan mapel baru + nilai yang dipertahankan
+  const sh     = getSheet(shName(rombelId, 'NILAI'));
+  sh.clearContents();
+  const header = ['NAMA', ...mapelBaru, 'sakit', 'ijin', 'alpa'];
+  const rows   = [header];
+  siswa.forEach((s, si) => {
+    const n   = nilaiMapped[si] || {};
+    const row = [s.nama];
+    mapelBaru.forEach((m, mi) => row.push(n[mi] !== undefined ? n[mi] : ''));
+    row.push(n['sakit'] || 0, n['ijin'] || 0, n['alpa'] || 0);
+    rows.push(row);
+  });
+  if (rows.length > 0) {
+    sh.getRange(1, 1, rows.length, header.length).setValues(rows);
+  }
 }
 
 function updateRombelIdUser_(username, rombelId) {
@@ -468,7 +521,41 @@ function getNilai_(rombelId) {
   const sh       = getSheet(shName(rombelId, 'NILAI'));
   const data     = sh.getDataRange().getValues();
   const siswaRes = getSiswa_(rombelId).siswa;
-  if (data.length < 2) return { mapel: [], siswa: siswaRes, nilai: [] };
+  
+  // Jika sheet nilai kosong, ambil mapel dari rombel
+  if (data.length < 2) {
+    const { rombel } = getRombel_();
+    const rombelInfo = rombel.find(r => r.id === rombelId);
+    const mapelFromRombel = rombelInfo ? rombelInfo.mapel : [];
+    
+    // Jika ada mapel dari rombel, inisialisasi sheet nilai
+    if (mapelFromRombel.length > 0) {
+      const header = ['NAMA', ...mapelFromRombel, 'sakit', 'ijin', 'alpa'];
+      const rows = [header];
+      siswaRes.forEach(s => {
+        const row = [s.nama];
+        mapelFromRombel.forEach(() => row.push(''));
+        row.push(0, 0, 0);
+        rows.push(row);
+      });
+      if (rows.length > 1) {
+        sh.getRange(1, 1, rows.length, header.length).setValues(rows);
+      }
+      
+      // Return data dengan mapel dari rombel
+      const nilai = siswaRes.map(() => {
+        const obj = {};
+        mapelFromRombel.forEach((m, mi) => obj[mi] = '');
+        obj['sakit'] = 0;
+        obj['ijin'] = 0;
+        obj['alpa'] = 0;
+        return obj;
+      });
+      return { mapel: mapelFromRombel, siswa: siswaRes, nilai };
+    }
+    
+    return { mapel: [], siswa: siswaRes, nilai: [] };
+  }
 
   const header = data[0];
   const mapel  = header.slice(1, header.length - 3);
@@ -504,7 +591,9 @@ function saveNilai_(body) {
     row.push(n['sakit'] || 0, n['ijin'] || 0, n['alpa'] || 0);
     rows.push(row);
   });
-  sh.getRange(1, 1, rows.length, header.length).setValues(rows);
+  if (rows.length > 0) {
+    sh.getRange(1, 1, rows.length, header.length).setValues(rows);
+  }
   return { success: true };
 }
 

@@ -5,17 +5,46 @@ let cetakCache = {};
 
 async function loadCetakData() {
   const rombelId = getActiveRombelId('cetak');
-  if (!rombelId) { showToast('Pilih rombel terlebih dahulu!', 'error'); return; }
+  if (!rombelId) { 
+    showToast('Pilih rombel terlebih dahulu!', 'error'); 
+    return; 
+  }
   try {
-    // Ambil semua data paralel, termasuk info rombel
-    const [settingRes, siswaRes, nilaiRes, kkmRes, ekskulRes, rombelRes] = await Promise.all([
-      API.call('getSetting'),
-      API.call('getSiswa',   { kelasId: rombelId }),
-      API.call('getNilai',   { kelasId: rombelId }),
-      API.call('getKKM',     { kelasId: rombelId }),
-      API.call('getEkskul',  { kelasId: rombelId }),
-      API.call('getRombel'),
-    ]);
+    // Untuk wali kelas: hanya ambil data rombel mereka (tanpa setting global)
+    // Untuk admin: ambil semua data termasuk setting
+    const isAdmin = currentUser && currentUser.role === 'admin';
+    
+    let settingRes, siswaRes, nilaiRes, kkmRes, ekskulRes, rombelRes;
+    
+    if (isAdmin) {
+      // Admin: ambil semua data termasuk setting
+      [settingRes, siswaRes, nilaiRes, kkmRes, ekskulRes, rombelRes] = await Promise.all([
+        API.call('getSetting'),
+        API.call('getSiswa',   { kelasId: rombelId }),
+        API.call('getNilai',   { kelasId: rombelId }),
+        API.call('getKKM',     { kelasId: rombelId }),
+        API.call('getEkskul',  { kelasId: rombelId }),
+        API.call('getRombel'),
+      ]);
+      if (settingRes.error) { showToast('Error getSetting: ' + settingRes.error, 'error'); return; }
+    } else {
+      // Wali kelas: hanya ambil data rombel mereka (tanpa setting)
+      [siswaRes, nilaiRes, kkmRes, ekskulRes, rombelRes] = await Promise.all([
+        API.call('getSiswa',   { kelasId: rombelId }),
+        API.call('getNilai',   { kelasId: rombelId }),
+        API.call('getKKM',     { kelasId: rombelId }),
+        API.call('getEkskul',  { kelasId: rombelId }),
+        API.call('getRombel'),
+      ]);
+      settingRes = { setting: {} }; // Setting kosong untuk wali kelas
+    }
+
+    // Cek error dari setiap response
+    if (siswaRes.error) { showToast('Error getSiswa: ' + siswaRes.error, 'error'); return; }
+    if (nilaiRes.error) { showToast('Error getNilai: ' + nilaiRes.error, 'error'); return; }
+    if (kkmRes.error) { showToast('Error getKKM: ' + kkmRes.error, 'error'); return; }
+    if (ekskulRes.error) { showToast('Error getEkskul: ' + ekskulRes.error, 'error'); return; }
+    if (rombelRes.error) { showToast('Error getRombel: ' + rombelRes.error, 'error'); return; }
 
     // Cari data rombel yang sesuai dengan rombelId user
     const rombelList = rombelRes.rombel || [];
@@ -34,7 +63,21 @@ async function loadCetakData() {
     };
     populateSiswaSelect();
     showToast('Data rapor dimuat!', 'success');
-  } catch(e) {}
+  } catch(e) {
+    showToast('Error memuat data: ' + e.message, 'error');
+    console.error('Error loadCetakData:', e);
+  }
+}
+
+// Auto-load data untuk wali kelas saat halaman cetak dibuka
+function initCetakPage() {
+  if (currentUser && currentUser.role === 'walikelas') {
+    // Sembunyikan selector rombel untuk wali kelas
+    const bar = document.getElementById('adminRombelBar-cetak');
+    if (bar) bar.classList.add('hidden');
+    // Auto-load data
+    loadCetakData();
+  }
 }
 
 function populateSiswaSelect() {

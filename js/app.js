@@ -7,6 +7,11 @@ function showPage(name) {
   if (pg) pg.classList.add('active');
   const btn = document.querySelector(`.nav-btn[data-page="${name}"]`);
   if (btn) btn.classList.add('active');
+  
+  // Auto-init untuk halaman tertentu
+  if (name === 'cetak' && typeof initCetakPage === 'function') {
+    initCetakPage();
+  }
 }
 
 function showLoading(show) {
@@ -62,7 +67,7 @@ function getActiveRombelId(page) {
     const sel = document.getElementById(`adminRombelSelect-${page}`);
     return sel ? sel.value : '';
   }
-  // Wali kelas: string tunggal (rombelId)
+  // Wali kelas: string tunggal (rombelId) - langsung return
   return currentUser.rombelId || '';
 }
 
