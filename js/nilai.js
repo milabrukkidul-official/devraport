@@ -1,12 +1,12 @@
-// ===== REKAP NILAI (per kelas) =====
+// ===== REKAP NILAI (per rombel) =====
 
 let nilaiData = { mapel: [], siswa: [], nilai: [] };
 
 async function loadNilai() {
-  const kelasId = getActiveKelasId('nilai');
-  if (!kelasId) { showToast('Pilih kelas terlebih dahulu!', 'error'); return; }
+  const rombelId = getActiveRombelId('nilai');
+  if (!rombelId) { showToast('Pilih rombel terlebih dahulu!', 'error'); return; }
   try {
-    const data = await API.call('getNilai', { kelasId });
+    const data = await API.call('getNilai', { kelasId: rombelId });
     nilaiData = data;
     renderTabelNilai();
     showToast('Data nilai dimuat!', 'success');
@@ -94,11 +94,11 @@ function hapusMapel(mi) {
 }
 
 async function saveNilai() {
-  const kelasId = getActiveKelasId('nilai');
-  if (!kelasId) { showToast('Pilih kelas terlebih dahulu!', 'error'); return; }
+  const rombelId = getActiveRombelId('nilai');
+  if (!rombelId) { showToast('Pilih rombel terlebih dahulu!', 'error'); return; }
   try {
     await API.post('saveNilai', {
-      kelasId,
+      kelasId: rombelId,
       mapel: JSON.stringify(nilaiData.mapel),
       nilai: JSON.stringify(nilaiData.nilai)
     });

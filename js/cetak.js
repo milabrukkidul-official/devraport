@@ -1,36 +1,36 @@
-// ===== CETAK RAPOR (per kelas, A4) =====
-// namaKelas & namaWali diambil dari data kelas (_KELAS), bukan dari setting
+// ===== CETAK RAPOR (per rombel, A4) =====
+// namaRombel & namaWali diambil dari data rombel
 
 let cetakCache = {};
 
 async function loadCetakData() {
-  const kelasId = getActiveKelasId('cetak');
-  if (!kelasId) { showToast('Pilih kelas terlebih dahulu!', 'error'); return; }
+  const rombelId = getActiveRombelId('cetak');
+  if (!rombelId) { showToast('Pilih rombel terlebih dahulu!', 'error'); return; }
   try {
-    // Ambil semua data paralel, termasuk info kelas dari daftar kelas
-    const [settingRes, siswaRes, nilaiRes, kkmRes, ekskulRes, kelasRes] = await Promise.all([
+    // Ambil semua data paralel, termasuk info rombel
+    const [settingRes, siswaRes, nilaiRes, kkmRes, ekskulRes, rombelRes] = await Promise.all([
       API.call('getSetting'),
-      API.call('getSiswa',   { kelasId }),
-      API.call('getNilai',   { kelasId }),
-      API.call('getKKM',     { kelasId }),
-      API.call('getEkskul',  { kelasId }),
-      API.call('getKelasPublic'),
+      API.call('getSiswa',   { kelasId: rombelId }),
+      API.call('getNilai',   { kelasId: rombelId }),
+      API.call('getKKM',     { kelasId: rombelId }),
+      API.call('getEkskul',  { kelasId: rombelId }),
+      API.call('getRombel'),
     ]);
 
-    // Cari data kelas yang sesuai dengan kelasId user
-    const kelasList = kelasRes.kelas || [];
-    const kelasInfo = kelasList.find(k => k.id === kelasId) || {};
+    // Cari data rombel yang sesuai dengan rombelId user
+    const rombelList = rombelRes.rombel || [];
+    const rombelInfo = rombelList.find(r => r.id === rombelId) || {};
 
     cetakCache = {
-      setting:   settingRes.setting  || {},
-      siswa:     siswaRes.siswa      || [],
-      mapel:     nilaiRes.mapel      || [],
-      nilai:     nilaiRes.nilai      || [],
-      kkm:       kkmRes.kkm          || {},
-      kegiatan:  ekskulRes.kegiatan  || [],
-      ekskul:    ekskulRes.nilai     || [],
-      namaKelas: kelasInfo.nama      || '',
-      namaWali:  kelasInfo.waliNama  || kelasInfo.wali || '',
+      setting:    settingRes.setting  || {},
+      siswa:      siswaRes.siswa      || [],
+      mapel:      nilaiRes.mapel      || [],
+      nilai:      nilaiRes.nilai      || [],
+      kkm:        kkmRes.kkm          || {},
+      kegiatan:   ekskulRes.kegiatan  || [],
+      ekskul:     ekskulRes.nilai     || [],
+      namaRombel: rombelInfo.nama     || rombelId,
+      namaWali:   rombelInfo.waliNama || rombelInfo.wali || '',
     };
     populateSiswaSelect();
     showToast('Data rapor dimuat!', 'success');
@@ -52,7 +52,7 @@ function renderRapor() {
   const idx = document.getElementById('selectSiswa').value;
   if (idx === '') { document.getElementById('raporPreview').innerHTML = ''; return; }
   const si = parseInt(idx);
-  const { setting, siswa, mapel, nilai, kkm, kegiatan, ekskul, namaKelas, namaWali } = cetakCache;
+  const { setting, siswa, mapel, nilai, kkm, kegiatan, ekskul, namaRombel, namaWali } = cetakCache;
   const s = siswa[si];
   if (!s) return;
 
@@ -142,7 +142,7 @@ function renderRapor() {
         <tr><td>Nama Orang Tua</td><td>:</td><td>${s.namaOrtu || ''}</td></tr>
         <tr><td>Nomor Induk</td><td>:</td><td>${s.noInduk || ''}</td></tr>
         <tr><td>NISN</td><td>:</td><td>${s.nisn || ''}</td></tr>
-        <tr><td>Kelas</td><td>:</td><td>${namaKelas}</td></tr>
+        <tr><td>Rombel</td><td>:</td><td>${namaRombel}</td></tr>
       </table>
     </div>
 

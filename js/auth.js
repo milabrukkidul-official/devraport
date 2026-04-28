@@ -80,7 +80,7 @@ function showMainApp() {
 function buildNavbar() {
   const nav = document.getElementById('navLinks');
   nav.innerHTML = '';
-  const { role, nama, kelasId } = currentUser;
+  const { role, nama, rombelId } = currentUser;
 
   const pages = [];
   if (role === 'admin') {
@@ -111,15 +111,15 @@ function buildNavbar() {
   });
 
   const roleLabel = { admin: 'Admin', walikelas: 'Wali Kelas', guruMapel: 'Guru Mapel' };
-  // Untuk guru mapel, kelasId adalah array — tampilkan jumlah kelas
-  let kelasInfo = '';
-  if (role === 'guruMapel' && Array.isArray(kelasId)) {
-    kelasInfo = kelasId.length ? ` — ${kelasId.length} kelas` : '';
-  } else if (kelasId) {
-    kelasInfo = ` — ${kelasId}`;
+  // Untuk guru mapel, rombelId adalah array — tampilkan jumlah rombel
+  let rombelInfo = '';
+  if (role === 'guruMapel' && Array.isArray(rombelId)) {
+    rombelInfo = rombelId.length ? ` — ${rombelId.length} rombel` : '';
+  } else if (rombelId) {
+    rombelInfo = ` — ${rombelId}`;
   }
   document.getElementById('navUserInfo').textContent =
-    `👤 ${nama} (${roleLabel[role] || role}${kelasInfo})`;
+    `👤 ${nama} (${roleLabel[role] || role}${rombelInfo})`;
 }
 
 window.addEventListener('DOMContentLoaded', () => {
@@ -131,28 +131,28 @@ window.addEventListener('DOMContentLoaded', () => {
   });
 });
 
-// Guru mapel: bangun selector kelas di halaman nilai
+// Guru mapel: bangun selector rombel di halaman nilai
 function buildGuruKelasSelector() {
-  const kelasList = Array.isArray(currentUser.kelasId) ? currentUser.kelasId : [];
-  if (!kelasList.length) {
-    showToast('Anda belum ditugaskan ke kelas manapun. Hubungi admin.', 'error');
+  const rombelList = Array.isArray(currentUser.rombelId) ? currentUser.rombelId : [];
+  if (!rombelList.length) {
+    showToast('Anda belum ditugaskan ke rombel manapun. Hubungi admin.', 'error');
     return;
   }
-  // Isi selector kelas di halaman nilai
-  const bar = document.getElementById('adminKelasBar-nilai');
-  const sel = document.getElementById('adminKelasSelect-nilai');
+  // Isi selector rombel di halaman nilai
+  const bar = document.getElementById('adminRombelBar-nilai');
+  const sel = document.getElementById('adminRombelSelect-nilai');
   if (bar && sel) {
     bar.classList.remove('hidden');
-    sel.innerHTML = '<option value="">-- Pilih Kelas --</option>';
-    kelasList.forEach(kid => {
+    sel.innerHTML = '<option value="">-- Pilih Rombel --</option>';
+    rombelList.forEach(rid => {
       const opt = document.createElement('option');
-      opt.value = kid;
-      opt.textContent = kid;
+      opt.value = rid;
+      opt.textContent = rid;
       sel.appendChild(opt);
     });
-    // Jika hanya 1 kelas, langsung pilih
-    if (kelasList.length === 1) {
-      sel.value = kelasList[0];
+    // Jika hanya 1 rombel, langsung pilih
+    if (rombelList.length === 1) {
+      sel.value = rombelList[0];
       loadNilai();
     }
   }

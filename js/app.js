@@ -46,33 +46,33 @@ function clearGasUrl() {
   showToast('Override dihapus, menggunakan GAS_URL dari api.js', 'success');
 }
 
-// ===== KELAS AKTIF (admin bisa pilih kelas, wali kelas otomatis) =====
+// ===== ROMBEL AKTIF (admin bisa pilih rombel, wali kelas otomatis) =====
 
-// Ambil kelasId yang sedang aktif untuk halaman tertentu
-function getActiveKelasId(page) {
+// Ambil rombelId yang sedang aktif untuk halaman tertentu
+function getActiveRombelId(page) {
   if (!currentUser) return '';
   const role = currentUser.role;
   // Admin: ambil dari selector halaman
   if (role === 'admin') {
-    const sel = document.getElementById(`adminKelasSelect-${page}`);
+    const sel = document.getElementById(`adminRombelSelect-${page}`);
     return sel ? sel.value : '';
   }
-  // Guru mapel: kelasId adalah array, ambil dari selector nilai
+  // Guru mapel: rombelId adalah array, ambil dari selector nilai
   if (role === 'guruMapel') {
-    const sel = document.getElementById(`adminKelasSelect-${page}`);
+    const sel = document.getElementById(`adminRombelSelect-${page}`);
     return sel ? sel.value : '';
   }
-  // Wali kelas: string tunggal
-  return currentUser.kelasId || '';
+  // Wali kelas: string tunggal (rombelId)
+  return currentUser.rombelId || '';
 }
 
-// Isi semua selector kelas admin dengan daftar kelas dari cache
-function populateAdminKelasSelectors() {
+// Isi semua selector rombel admin dengan daftar rombel dari cache
+function populateAdminRombelSelectors() {
   if (!currentUser || currentUser.role !== 'admin') return;
   const pages = ['setting','siswa','nilai','ekskul','kkm','cetak'];
   pages.forEach(page => {
-    const bar = document.getElementById(`adminKelasBar-${page}`);
-    const sel = document.getElementById(`adminKelasSelect-${page}`);
+    const bar = document.getElementById(`adminRombelBar-${page}`);
+    const sel = document.getElementById(`adminRombelSelect-${page}`);
     if (!bar || !sel) return;
     bar.classList.remove('hidden');
     const prev = sel.value;
@@ -90,7 +90,7 @@ function populateAdminKelasSelectors() {
 // Dipanggil setelah loadAdminData berhasil
 function onRombelListLoaded(rombelList) {
   window._rombelList = rombelList || [];
-  populateAdminKelasSelectors();
+  populateAdminRombelSelectors();
 }
 
 // ===== HELPERS =====

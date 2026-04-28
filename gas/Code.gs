@@ -1,5 +1,5 @@
 // ============================================================
-// GOOGLE APPS SCRIPT - RAPOR DIGITAL (Multi-Kelas + Auth)
+// GOOGLE APPS SCRIPT - RAPOR DIGITAL (Rombel-Based + Auth)
 // ============================================================
 // CARA SETUP (SEKALI SAJA):
 // 1. Paste kode ini di Google Apps Script
@@ -13,8 +13,7 @@
 const SS = SpreadsheetApp.getActiveSpreadsheet();
 
 const SH_USERS   = '_USERS';
-const SH_KELAS   = '_KELAS';
-const SH_SETTING = '_SETTING';   // setting global (berlaku semua kelas)
+const SH_SETTING = '_SETTING';   // setting global (berlaku semua rombel)
 const SH_ROMBEL  = '_ROMBEL';    // rombongan belajar
 
 // ===== RESPONSE =====
@@ -28,8 +27,8 @@ function R(data) {
 function getSheet(name) {
   return SS.getSheetByName(name) || SS.insertSheet(name);
 }
-function shName(kelasId, suffix) {
-  return kelasId + '_' + suffix;
+function shName(rombelId, suffix) {
+  return rombelId + '_' + suffix;
 }
 
 // ===== AUTH =====
@@ -60,36 +59,39 @@ function verifyToken(token) {
   if (hash !== expected) return null;
   return user;
 }
-// Helper: parse kelasId yang bisa berupa string tunggal atau JSON array
-function parseKelasId_(kelasId) {
-  if (!kelasId) return [];
+
+// Helper: parse rombelId yang bisa berupa string tunggal atau JSON array
+function parseRombelId_(rombelId) {
+  if (!rombelId) return [];
   try {
-    const parsed = JSON.parse(kelasId);
+    const parsed = JSON.parse(rombelId);
     if (Array.isArray(parsed)) return parsed.filter(Boolean);
   } catch(e) {}
-  return kelasId ? [kelasId] : [];
+  return rombelId ? [rombelId] : [];
 }
 
 function isAdmin(token) {
   const u = verifyToken(token);
   return u && u.role === 'admin';
 }
-function canAccessKelas(token, kelasId) {
+
+function canAccessRombel(token, rombelId) {
   const u = verifyToken(token);
   if (!u) return false;
   if (u.role === 'admin') return true;
-  return u.kelasId === kelasId;
+  return u.rombelId === rombelId;
 }
-function canEditNilai(token, kelasId) {
+
+function canEditNilai(token, rombelId) {
   const u = verifyToken(token);
   if (!u) return false;
   if (u.role === 'admin') return true;
-  if (!kelasId) return false;
-  if (u.role === 'walikelas') return u.kelasId === kelasId;
-  // guruMapel: kelasId bisa berupa JSON array atau string tunggal
+  if (!rombelId) return false;
+  if (u.role === 'walikelas') return u.rombelId === rombelId;
+  // guruMapel: rombelId bisa berupa JSON array atau string tunggal
   if (u.role === 'guruMapel') {
-    const kelasList = parseKelasId_(u.kelasId);
-    return kelasList.includes(kelasId);
+    const rombelList = parseRombelId_(u.rombelId);
+    return rombelList.includes(rombelId);
   }
   return false;
 }
@@ -101,8 +103,7 @@ function doGet(e) {
   const p = e.parameter;
   try {
     switch(p.action) {
-      case 'getKelasPublic': return R(getKelasPublic_());
-      case 'login':          return R(login_(p.username, p.password, p.kelasId));
+      case 'login':          return R(login_(p.username, p.password));
       // Fallback: forward ke doPost logic dengan token dari query param
       default:
         const fakeBody = Object.assign({ token: p.token || '' }, p);
@@ -122,37 +123,38 @@ function handleAction_(body) {
   try {
     switch(body.action) {
       // ── Publik (tanpa token) ──
-      case 'login':         return R(login_(body.username, body.password, body.kelasId));
-      case 'getKelasPublic':return R(getKelasPublic_());
+      case 'login':         return R(login_(body.username, body.password));
+      
       // ── Admin read ──
-      case 'getKelas':      return R(requireAdmin(body.token, () => getKelasPublic_()));
       case 'getUsers':      return R(requireAdmin(body.token, () => getUsers_()));
       case 'getRombel':     return R(requireAdmin(body.token, () => getRombel_()));
-      // ── Setting global (admin only, tanpa kelasId) ──
+      
+      // ── Setting global (admin only, tanpa rombelId) ──
       case 'getSetting':    return R(requireAdmin(body.token, () => getSettingGlobal_()));
-      // ── Per-kelas read ──
-      case 'getSiswa':      return R(requireKelas(body.token, body.kelasId, () => getSiswa_(body.kelasId)));
+      
+      // ── Per-rombel read (kelasId di parameter sebenarnya adalah rombelId) ──
+      case 'getSiswa':      return R(requireRombel(body.token, body.kelasId, () => getSiswa_(body.kelasId)));
       case 'getNilai':      return R(requireNilai(body.token, body.kelasId, () => getNilai_(body.kelasId)));
-      case 'getKKM':        return R(requireKelas(body.token, body.kelasId, () => getKKM_(body.kelasId)));
-      case 'getEkskul':     return R(requireKelas(body.token, body.kelasId, () => getEkskul_(body.kelasId)));
+      case 'getKKM':        return R(requireRombel(body.token, body.kelasId, () => getKKM_(body.kelasId)));
+      case 'getEkskul':     return R(requireRombel(body.token, body.kelasId, () => getEkskul_(body.kelasId)));
+      
       // ── Admin write ──
-      case 'saveKelas':     return R(requireAdmin(body.token, () => saveKelas_(body)));
-      case 'deleteKelas':   return R(requireAdmin(body.token, () => deleteKelas_(body)));
       case 'saveUser':      return R(requireAdmin(body.token, () => saveUser_(body)));
       case 'deleteUser':    return R(requireAdmin(body.token, () => deleteUser_(body)));
       case 'resetPassword': return R(requireAdmin(body.token, () => resetPassword_(body)));
-      case 'saveGuruKelas': return R(requireAdmin(body.token, () => saveGuruKelas_(body)));
+      case 'saveGuruRombel':return R(requireAdmin(body.token, () => saveGuruRombel_(body)));
       case 'saveSetting':   return R(requireAdmin(body.token, () => saveSettingGlobal_(body)));
       case 'saveRombel':    return R(requireAdmin(body.token, () => saveRombel_(body)));
       case 'deleteRombel':  return R(requireAdmin(body.token, () => deleteRombel_(body)));
-      case 'saveMapel':     return R(requireAdmin(body.token, () => saveMapel_(body)));
-      // ── Per-kelas write ──
-      case 'saveSiswa':     return R(requireKelas(body.token, body.kelasId, () => saveSiswa_(body)));
-      case 'deleteSiswa':   return R(requireKelas(body.token, body.kelasId, () => deleteSiswa_(body)));
-      case 'importSiswa':   return R(requireKelas(body.token, body.kelasId, () => importSiswa_(body)));
+      
+      // ── Per-rombel write ──
+      case 'saveSiswa':     return R(requireRombel(body.token, body.kelasId, () => saveSiswa_(body)));
+      case 'deleteSiswa':   return R(requireRombel(body.token, body.kelasId, () => deleteSiswa_(body)));
+      case 'importSiswa':   return R(requireRombel(body.token, body.kelasId, () => importSiswa_(body)));
       case 'saveNilai':     return R(requireNilai(body.token, body.kelasId, () => saveNilai_(body)));
-      case 'saveKKM':       return R(requireKelas(body.token, body.kelasId, () => saveKKM_(body)));
-      case 'saveEkskul':    return R(requireKelas(body.token, body.kelasId, () => saveEkskul_(body)));
+      case 'saveKKM':       return R(requireRombel(body.token, body.kelasId, () => saveKKM_(body)));
+      case 'saveEkskul':    return R(requireRombel(body.token, body.kelasId, () => saveEkskul_(body)));
+      
       default:              return R({ error: 'Unknown action: ' + body.action });
     }
   } catch(err) { return R({ error: err.message }); }
@@ -163,32 +165,32 @@ function requireAdmin(token, fn) {
   if (!isAdmin(token)) return { error: 'Akses ditolak. Hanya admin.' };
   return fn();
 }
-function requireKelas(token, kelasId, fn) {
-  if (!canAccessKelas(token, kelasId)) return { error: 'Akses ditolak.' };
+function requireRombel(token, rombelId, fn) {
+  if (!canAccessRombel(token, rombelId)) return { error: 'Akses ditolak.' };
   return fn();
 }
-function requireNilai(token, kelasId, fn) {
-  if (!canEditNilai(token, kelasId)) return { error: 'Akses ditolak.' };
+function requireNilai(token, rombelId, fn) {
+  if (!canEditNilai(token, rombelId)) return { error: 'Akses ditolak.' };
   return fn();
 }
 
 // ============================================================
 // LOGIN
 // ============================================================
-function login_(username, password, kelasId) {
+function login_(username, password) {
   if (!username || !password) return { success: false, message: 'Username/password kosong.' };
   const { users } = getUsers_();
   const user = users.find(u => u.username === username && u.password === password);
   if (!user) return { success: false, message: 'Username atau password salah.' };
 
-  // kelasId: admin = '', walikelas = string, guruMapel = array JSON
-  let userKelasId;
+  // rombelId: admin = '', walikelas = string, guruMapel = array JSON
+  let userRombelId;
   if (user.role === 'admin') {
-    userKelasId = '';
+    userRombelId = '';
   } else if (user.role === 'guruMapel') {
-    userKelasId = parseKelasId_(user.kelasId); // array
+    userRombelId = parseRombelId_(user.rombelId); // array
   } else {
-    userKelasId = user.kelasId || ''; // string
+    userRombelId = user.rombelId || ''; // string
   }
 
   const token = makeToken_(user.username, user.password);
@@ -198,119 +200,15 @@ function login_(username, password, kelasId) {
       username:  user.username,
       nama:      user.nama,
       role:      user.role,
-      kelasId:   userKelasId,  // string untuk admin/walikelas, array untuk guruMapel
+      rombelId:  userRombelId,  // string untuk admin/walikelas, array untuk guruMapel
       token:     token
     }
   };
 }
 
 // ============================================================
-// KELAS
-// Kolom _KELAS: id | nama | rombelId | wali (username) | waliNama
-// Semester & Tahun Pelajaran diambil dari _SETTING global
-// ============================================================
-function getKelasPublic_() {
-  const sh = getSheet(SH_KELAS);
-  const data = sh.getDataRange().getValues();
-  if (data.length <= 1) return { kelas: [] };
-  const kelas = data.slice(1).map(r => ({
-    id:       String(r[0] || ''),
-    nama:     String(r[1] || ''),
-    rombelId: String(r[2] || ''),
-    wali:     String(r[3] || ''),
-    waliNama: String(r[4] || '')
-  })).filter(k => k.id);
-  return { kelas };
-}
-
-function saveKelas_(body) {
-  const k  = JSON.parse(body.kelas);
-  const sh = getSheet(SH_KELAS);
-  const data = sh.getDataRange().getValues();
-
-  // Cari nama lengkap wali kelas
-  let waliNama = '';
-  if (k.wali) {
-    const { users } = getUsers_();
-    const wu = users.find(u => u.username === k.wali);
-    if (wu) waliNama = wu.nama;
-  }
-
-  let found = -1;
-  for (let i = 1; i < data.length; i++) {
-    if (String(data[i][0]) === k.id) { found = i + 1; break; }
-  }
-
-  // Jika edit dan wali berubah, lepas kelasId dari wali lama
-  if (found > 0) {
-    const waliLama = String(data[found-1][3] || '');
-    if (waliLama && waliLama !== k.wali) updateKelasIdUser_(waliLama, '');
-  }
-
-  const row = [k.id, k.nama, k.rombelId || '', k.wali || '', waliNama];
-  if (found > 0) {
-    sh.getRange(found, 1, 1, 5).setValues([row]);
-  } else {
-    sh.appendRow(row);
-    initSettingKelas_(k.id);
-    // Terapkan mapel dari rombel ke kelas baru otomatis
-    if (k.rombelId) applyRombelToKelas_(k.rombelId, k.id);
-  }
-
-  if (k.wali) updateKelasIdUser_(k.wali, k.id);
-  return { success: true };
-}
-
-// Terapkan mapel rombel ke kelas saat kelas baru dibuat
-function applyRombelToKelas_(rombelId, kelasId) {
-  const { rombel } = getRombel_();
-  const r = rombel.find(r => r.id === rombelId);
-  if (!r || !r.mapel.length) return;
-  saveMapel_({ kelasId, mapel: JSON.stringify(r.mapel) });
-}
-
-function updateKelasIdUser_(username, kelasId) {
-  if (!username) return;
-  const sh   = getSheet(SH_USERS);
-  const data = sh.getDataRange().getValues();
-  for (let i = 1; i < data.length; i++) {
-    if (String(data[i][0]) === username) {
-      sh.getRange(i + 1, 5).setValue(kelasId);
-      break;
-    }
-  }
-}
-
-// Inisialisasi setting default saat kelas baru dibuat (tanpa semester/tahun — dari global)
-function initSettingKelas_(kelasId) {
-  const sh = getSheet(shName(kelasId, 'SETTING'));
-  if (sh.getLastRow() === 0) {
-    sh.getRange(1,1,1,2).setValues([['_init','1']]);
-  }
-}
-
-function deleteKelas_(body) {
-  const kelasId = body.kelasId;
-  const sh = getSheet(SH_KELAS);
-  const data = sh.getDataRange().getValues();
-  for (let i = data.length - 1; i >= 1; i--) {
-    if (String(data[i][0]) === kelasId) {
-      // Lepas wali kelas
-      const wali = String(data[i][3] || '');
-      if (wali) updateKelasIdUser_(wali, '');
-      sh.deleteRow(i + 1);
-      break;
-    }
-  }
-  ['_SETTING','_SISWA','_NILAI','_KKM','_EKSKUL'].forEach(suffix => {
-    const s = SS.getSheetByName(kelasId + suffix);
-    if (s) SS.deleteSheet(s);
-  });
-  return { success: true };
-}
-
-// ============================================================
 // USERS
+// Kolom _USERS: username | password | nama | role | rombelId
 // ============================================================
 function getUsers_() {
   const sh = getSheet(SH_USERS);
@@ -321,7 +219,7 @@ function getUsers_() {
     password: String(r[1] || ''),
     nama:     String(r[2] || ''),
     role:     String(r[3] || ''),
-    kelasId:  String(r[4] || '')
+    rombelId: String(r[4] || '')
   })).filter(u => u.username);
   return { users };
 }
@@ -340,13 +238,13 @@ function saveUser_(body) {
   let password = u.password;
   if (!isNew && !password && found > 0) password = String(data[found-1][1]);
 
-  // Pertahankan kelasId lama — kelasId HANYA diubah lewat saveKelas, bukan dari sini
-  let kelasId = '';
+  // Pertahankan rombelId lama — rombelId HANYA diubah lewat saveRombel atau saveGuruRombel
+  let rombelId = u.rombelId || '';
   if (!isNew && found > 0) {
-    kelasId = String(data[found-1][4] || ''); // kolom 5 = kelasId
+    rombelId = String(data[found-1][4] || ''); // kolom 5 = rombelId
   }
 
-  const row = [u.username, password, u.nama, u.role, kelasId];
+  const row = [u.username, password, u.nama, u.role, rombelId];
   if (found > 0) {
     sh.getRange(found, 1, 1, 5).setValues([row]);
   } else {
@@ -354,7 +252,6 @@ function saveUser_(body) {
   }
   return { success: true };
 }
-
 
 function deleteUser_(body) {
   const username = body.username;
@@ -367,15 +264,15 @@ function deleteUser_(body) {
   return { success: true };
 }
 
-// Simpan daftar kelas untuk guru mapel (array JSON)
-function saveGuruKelas_(body) {
-  const { username, kelasList } = body;
+// Simpan daftar rombel untuk guru mapel (array JSON)
+function saveGuruRombel_(body) {
+  const { username, rombelList } = body;
   if (!username) return { error: 'Username kosong.' };
   const sh   = getSheet(SH_USERS);
   const data = sh.getDataRange().getValues();
   for (let i = 1; i < data.length; i++) {
     if (String(data[i][0]) === username) {
-      sh.getRange(i + 1, 5).setValue(JSON.stringify(kelasList || []));
+      sh.getRange(i + 1, 5).setValue(JSON.stringify(rombelList || []));
       return { success: true };
     }
   }
@@ -398,7 +295,7 @@ function resetPassword_(body) {
 }
 
 // ============================================================
-// SETTING GLOBAL (berlaku semua kelas)
+// SETTING GLOBAL (berlaku semua rombel)
 // ============================================================
 function getSettingGlobal_() {
   const sh   = getSheet(SH_SETTING);
@@ -419,17 +316,19 @@ function saveSettingGlobal_(body) {
 
 // ============================================================
 // ROMBEL (Rombongan Belajar)
-// Sheet _ROMBEL: id | namaRombel | mapelJSON
-// Rombel = grup kelas yang berbagi daftar mapel yang sama
+// Sheet _ROMBEL: id | namaRombel | wali (username) | waliNama | mapelJSON
+// Rombel = grup belajar yang berisi daftar mata pelajaran
 // ============================================================
 function getRombel_() {
   const sh   = getSheet(SH_ROMBEL);
   const data = sh.getDataRange().getValues();
   if (data.length <= 1) return { rombel: [] };
   const rombel = data.slice(1).map(r => ({
-    id:    String(r[0] || ''),
-    nama:  String(r[1] || ''),
-    mapel: r[2] ? JSON.parse(r[2]) : []
+    id:       String(r[0] || ''),
+    nama:     String(r[1] || ''),
+    wali:     String(r[2] || ''),
+    waliNama: String(r[3] || ''),
+    mapel:    r[4] ? JSON.parse(r[4]) : []
   })).filter(r => r.id);
   return { rombel };
 }
@@ -438,36 +337,88 @@ function saveRombel_(body) {
   const r  = JSON.parse(body.rombel);
   const sh = getSheet(SH_ROMBEL);
   const data = sh.getDataRange().getValues();
+  
+  // Cari nama lengkap wali kelas
+  let waliNama = '';
+  if (r.wali) {
+    const { users } = getUsers_();
+    const wu = users.find(u => u.username === r.wali);
+    if (wu) waliNama = wu.nama;
+  }
+  
   let found = -1;
   for (let i = 1; i < data.length; i++) {
     if (String(data[i][0]) === r.id) { found = i + 1; break; }
   }
-  const row = [r.id, r.nama, JSON.stringify(r.mapel || [])];
+  
+  // Jika edit dan wali berubah, lepas rombelId dari wali lama
   if (found > 0) {
-    sh.getRange(found, 1, 1, 3).setValues([row]);
+    const waliLama = String(data[found-1][2] || '');
+    if (waliLama && waliLama !== r.wali) updateRombelIdUser_(waliLama, '');
+  }
+  
+  const row = [r.id, r.nama, r.wali || '', waliNama, JSON.stringify(r.mapel || [])];
+  if (found > 0) {
+    sh.getRange(found, 1, 1, 5).setValues([row]);
   } else {
     sh.appendRow(row);
+    initSettingRombel_(r.id);
   }
+  
+  // Update rombelId di user wali kelas
+  if (r.wali) updateRombelIdUser_(r.wali, r.id);
+  
   return { success: true };
+}
+
+function updateRombelIdUser_(username, rombelId) {
+  if (!username) return;
+  const sh   = getSheet(SH_USERS);
+  const data = sh.getDataRange().getValues();
+  for (let i = 1; i < data.length; i++) {
+    if (String(data[i][0]) === username) {
+      sh.getRange(i + 1, 5).setValue(rombelId);
+      break;
+    }
+  }
+}
+
+// Inisialisasi setting default saat rombel baru dibuat
+function initSettingRombel_(rombelId) {
+  const sh = getSheet(shName(rombelId, 'SETTING'));
+  if (sh.getLastRow() === 0) {
+    sh.getRange(1,1,1,2).setValues([['_init','1']]);
+  }
 }
 
 function deleteRombel_(body) {
-  const id   = body.rombelId;
-  const sh   = getSheet(SH_ROMBEL);
+  const rombelId = body.rombelId;
+  const sh = getSheet(SH_ROMBEL);
   const data = sh.getDataRange().getValues();
   for (let i = data.length - 1; i >= 1; i--) {
-    if (String(data[i][0]) === id) { sh.deleteRow(i + 1); break; }
+    if (String(data[i][0]) === rombelId) {
+      // Lepas wali kelas
+      const wali = String(data[i][2] || '');
+      if (wali) updateRombelIdUser_(wali, '');
+      sh.deleteRow(i + 1);
+      break;
+    }
   }
+  // Hapus semua sheet terkait rombel
+  ['_SETTING','_SISWA','_NILAI','_KKM','_EKSKUL'].forEach(suffix => {
+    const s = SS.getSheetByName(rombelId + suffix);
+    if (s) SS.deleteSheet(s);
+  });
   return { success: true };
 }
 
 // ============================================================
-// SISWA (per kelas)
+// SISWA (per rombel)
 // ============================================================
 const SISWA_H = ['nisn','noInduk','nama','panggilan','tempatLahir','tglLahir','namaOrtu','pesan'];
 
-function getSiswa_(kelasId) {
-  const sh   = getSheet(shName(kelasId, 'SISWA'));
+function getSiswa_(rombelId) {
+  const sh   = getSheet(shName(rombelId, 'SISWA'));
   const data = sh.getDataRange().getValues();
   if (data.length <= 1) return { siswa: [] };
   return {
@@ -480,7 +431,7 @@ function getSiswa_(kelasId) {
 }
 
 function saveSiswa_(body) {
-  const { kelasId, rowIndex } = body;
+  const { kelasId, rowIndex } = body; // kelasId sebenarnya adalah rombelId
   const siswa = JSON.parse(body.siswa);
   const sh    = getSheet(shName(kelasId, 'SISWA'));
   if (sh.getLastRow() === 0) sh.appendRow(SISWA_H);
@@ -500,7 +451,7 @@ function deleteSiswa_(body) {
 }
 
 function importSiswa_(body) {
-  const { kelasId } = body;
+  const { kelasId } = body; // kelasId sebenarnya adalah rombelId
   const siswaList   = JSON.parse(body.siswaList);
   if (!siswaList || !siswaList.length) return { error: 'Data kosong.' };
   const sh = getSheet(shName(kelasId, 'SISWA'));
@@ -511,12 +462,12 @@ function importSiswa_(body) {
 }
 
 // ============================================================
-// NILAI (per kelas)
+// NILAI (per rombel)
 // ============================================================
-function getNilai_(kelasId) {
-  const sh       = getSheet(shName(kelasId, 'NILAI'));
+function getNilai_(rombelId) {
+  const sh       = getSheet(shName(rombelId, 'NILAI'));
   const data     = sh.getDataRange().getValues();
-  const siswaRes = getSiswa_(kelasId).siswa;
+  const siswaRes = getSiswa_(rombelId).siswa;
   if (data.length < 2) return { mapel: [], siswa: siswaRes, nilai: [] };
 
   const header = data[0];
@@ -538,7 +489,7 @@ function getNilai_(kelasId) {
 }
 
 function saveNilai_(body) {
-  const { kelasId } = body;
+  const { kelasId } = body; // kelasId sebenarnya adalah rombelId
   const mapel = JSON.parse(body.mapel);
   const nilai = JSON.parse(body.nilai);
   const siswa = getSiswa_(kelasId).siswa;
@@ -557,54 +508,11 @@ function saveNilai_(body) {
   return { success: true };
 }
 
-// Simpan hanya struktur mapel (admin only), pertahankan nilai yang sudah ada
-function saveMapel_(body) {
-  const { kelasId } = body;
-  const mapelBaru = JSON.parse(body.mapel);
-  if (!kelasId || !mapelBaru) return { error: 'Data tidak lengkap.' };
-
-  // Ambil data nilai yang sudah ada
-  const existing = getNilai_(kelasId);
-  const mapelLama = existing.mapel || [];
-  const nilaiLama = existing.nilai || [];
-  const siswa     = existing.siswa || [];
-
-  // Petakan nilai lama ke mapel baru berdasarkan nama mapel
-  const nilaiMapped = siswa.map((s, si) => {
-    const rowLama = nilaiLama[si] || {};
-    const rowBaru = {};
-    mapelBaru.forEach((m, mi) => {
-      const idxLama = mapelLama.indexOf(m);
-      rowBaru[mi] = idxLama >= 0 && rowLama[idxLama] !== undefined ? rowLama[idxLama] : '';
-    });
-    rowBaru['sakit'] = rowLama['sakit'] || 0;
-    rowBaru['ijin']  = rowLama['ijin']  || 0;
-    rowBaru['alpa']  = rowLama['alpa']  || 0;
-    return rowBaru;
-  });
-
-  // Tulis ulang sheet dengan mapel baru + nilai yang dipertahankan
-  const sh     = getSheet(shName(kelasId, 'NILAI'));
-  sh.clearContents();
-  const header = ['NAMA', ...mapelBaru, 'sakit', 'ijin', 'alpa'];
-  const rows   = [header];
-  siswa.forEach((s, si) => {
-    const n   = nilaiMapped[si] || {};
-    const row = [s.nama];
-    mapelBaru.forEach((m, mi) => row.push(n[mi] !== undefined ? n[mi] : ''));
-    row.push(n['sakit'] || 0, n['ijin'] || 0, n['alpa'] || 0);
-    rows.push(row);
-  });
-  if (rows.length > 1) sh.getRange(1, 1, rows.length, header.length).setValues(rows);
-  else sh.getRange(1, 1, 1, header.length).setValues([header]);
-  return { success: true };
-}
-
 // ============================================================
-// KKM (per kelas)
+// KKM (per rombel)
 // ============================================================
-function getKKM_(kelasId) {
-  const sh   = getSheet(shName(kelasId, 'KKM'));
+function getKKM_(rombelId) {
+  const sh   = getSheet(shName(rombelId, 'KKM'));
   const data = sh.getDataRange().getValues();
   const kkm  = {};
   data.forEach(r => { if (r[0]) kkm[String(r[0])] = r[1] || 70; });
@@ -612,7 +520,7 @@ function getKKM_(kelasId) {
 }
 
 function saveKKM_(body) {
-  const { kelasId } = body;
+  const { kelasId } = body; // kelasId sebenarnya adalah rombelId
   const kkm = JSON.parse(body.kkm);
   const sh  = getSheet(shName(kelasId, 'KKM'));
   sh.clearContents();
@@ -622,12 +530,12 @@ function saveKKM_(body) {
 }
 
 // ============================================================
-// EKSKUL (per kelas)
+// EKSKUL (per rombel)
 // ============================================================
-function getEkskul_(kelasId) {
-  const sh       = getSheet(shName(kelasId, 'EKSKUL'));
+function getEkskul_(rombelId) {
+  const sh       = getSheet(shName(rombelId, 'EKSKUL'));
   const data     = sh.getDataRange().getValues();
-  const siswaRes = getSiswa_(kelasId).siswa;
+  const siswaRes = getSiswa_(rombelId).siswa;
   if (data.length < 2) return { kegiatan: [], siswa: siswaRes, nilai: [] };
 
   const kegiatan  = data[0].slice(1);
@@ -644,7 +552,7 @@ function getEkskul_(kelasId) {
 }
 
 function saveEkskul_(body) {
-  const { kelasId } = body;
+  const { kelasId } = body; // kelasId sebenarnya adalah rombelId
   const kegiatan = JSON.parse(body.kegiatan);
   const nilai    = JSON.parse(body.nilai);
   const siswa    = getSiswa_(kelasId).siswa;
@@ -668,12 +576,8 @@ function saveEkskul_(body) {
 function setupSheets() {
   const shUsers = getSheet(SH_USERS);
   if (shUsers.getLastRow() === 0) {
-    shUsers.appendRow(['username','password','nama','role','kelasId']);
+    shUsers.appendRow(['username','password','nama','role','rombelId']);
     shUsers.appendRow(['admin','admin123','Administrator','admin','']);
-  }
-  const shKelas = getSheet(SH_KELAS);
-  if (shKelas.getLastRow() === 0) {
-    shKelas.appendRow(['id','nama','rombelId','wali','waliNama']);
   }
   const shSetting = getSheet(SH_SETTING);
   if (shSetting.getLastRow() === 0) {
@@ -686,7 +590,7 @@ function setupSheets() {
   }
   const shRombel = getSheet(SH_ROMBEL);
   if (shRombel.getLastRow() === 0) {
-    shRombel.appendRow(['id','namaRombel','mapelJSON']);
+    shRombel.appendRow(['id','namaRombel','wali','waliNama','mapelJSON']);
   }
   SpreadsheetApp.getUi().alert(
     '✅ Setup selesai!\n\nUser default:\n  Username: admin\n  Password: admin123\n\n' +

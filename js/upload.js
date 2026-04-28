@@ -132,6 +132,12 @@ function bacaExcel(file, callback) {
 // ═══════════════════════════════════════════════════════════
 
 function downloadTemplateSiswa() {
+  const rombelId = getActiveRombelId('siswa');
+  if (!rombelId) {
+    showToast('Pilih rombel terlebih dahulu sebelum download template!', 'error');
+    return;
+  }
+
   const headers = [
     'NISN', 'No Induk', 'Nama Siswa', 'Nama Panggilan',
     'Tempat Lahir', 'Tanggal Lahir (YYYY-MM-DD)',
@@ -144,17 +150,77 @@ function downloadTemplateSiswa() {
   ];
   const lebar = [14, 10, 22, 14, 14, 22, 22, 30];
   const wb = buatWorkbook('DATA SISWA', headers, contoh, lebar);
-  unduhExcel(wb, 'template_siswa.xlsx');
-  showToast('Template siswa diunduh!', 'success');
+
+  // Tambah sheet petunjuk dengan info rombel
+  const petunjukData = [
+    ['PETUNJUK PENGISIAN DATA SISWA'],
+    [''],
+    [`ROMBEL TUJUAN: ${rombelId}`],
+    [''],
+    ['PENTING:'],
+    ['• Data siswa akan diimport ke rombel yang dipilih saat ini'],
+    ['• Pastikan Anda memilih rombel yang benar sebelum upload'],
+    ['• Jika ingin upload ke rombel lain, pilih rombel tersebut terlebih dahulu'],
+    [''],
+    ['CARA PENGISIAN:'],
+    ['1. Isi data siswa pada sheet "DATA SISWA"'],
+    ['2. Tanggal Lahir gunakan format YYYY-MM-DD (contoh: 2010-05-17)'],
+    ['3. Jangan mengubah nama kolom di baris pertama'],
+    ['4. Jangan menambah/menghapus kolom'],
+    ['5. Simpan sebagai .xlsx lalu upload'],
+    [''],
+    ['KOLOM WAJIB:'],
+    ['• Nama Siswa (kolom C) - WAJIB diisi'],
+    [''],
+    ['KOLOM OPSIONAL:'],
+    ['• NISN, No Induk, Nama Panggilan, Tempat Lahir, Tanggal Lahir,'],
+    ['  Nama Orang Tua, Pesan Wali Kelas - boleh dikosongkan'],
+  ];
+  const wsPetunjuk = XLSX.utils.aoa_to_sheet(petunjukData);
+  wsPetunjuk['!cols'] = [{ wch: 70 }];
+  
+  // Style untuk judul dan info rombel
+  if (wsPetunjuk['A1']) {
+    wsPetunjuk['A1'].s = {
+      font: { bold: true, sz: 14, color: { rgb: '1E3A5F' } },
+      alignment: { horizontal: 'left', vertical: 'center' }
+    };
+  }
+  if (wsPetunjuk['A3']) {
+    wsPetunjuk['A3'].s = {
+      font: { bold: true, sz: 12, color: { rgb: 'DC2626' } },
+      fill: { fgColor: { rgb: 'FEF2F2' } },
+      alignment: { horizontal: 'left', vertical: 'center' }
+    };
+  }
+
+  XLSX.utils.book_append_sheet(wb, wsPetunjuk, 'PETUNJUK');
+
+  unduhExcel(wb, `template_siswa_${rombelId}.xlsx`);
+  showToast(`Template siswa untuk rombel ${rombelId} diunduh!`, 'success');
 }
 
 let xlsSiswaParsed = [];
 
 function showModalUploadSiswa() {
+  const rombelId = getActiveRombelId('siswa');
+  if (!rombelId) {
+    showToast('Pilih rombel terlebih dahulu sebelum upload!', 'error');
+    return;
+  }
+
   xlsSiswaParsed = [];
   document.getElementById('xlsSiswaFile').value = '';
   document.getElementById('xlsSiswaPreview').innerHTML = '';
   document.getElementById('btnImportSiswa').disabled = true;
+  
+  // Tampilkan info rombel tujuan
+  const infoRombel = document.getElementById('uploadSiswaRombelInfo');
+  if (infoRombel) {
+    infoRombel.textContent = `Rombel Tujuan: ${rombelId}`;
+    infoRombel.style.display = 'block';
+  }
+  
   document.getElementById('modalUploadSiswa').classList.remove('hidden');
 }
 
@@ -190,10 +256,10 @@ function previewXlsSiswa() {
 
 async function importXlsSiswa() {
   if (!xlsSiswaParsed.length) return;
-  const kelasId = getActiveKelasId('siswa');
-  if (!kelasId) { showToast('Pilih kelas terlebih dahulu!', 'error'); return; }
+  const rombelId = getActiveRombelId('siswa');
+  if (!rombelId) { showToast('Pilih rombel terlebih dahulu!', 'error'); return; }
   try {
-    await API.post('importSiswa', { kelasId, siswaList: JSON.stringify(xlsSiswaParsed) });
+    await API.post('importSiswa', { kelasId: rombelId, siswaList: JSON.stringify(xlsSiswaParsed) });
     closeModal('modalUploadSiswa');
     showToast(`${xlsSiswaParsed.length} siswa berhasil diimport!`, 'success');
     await loadSiswa();
@@ -292,8 +358,8 @@ function previewXlsNilai() {
 
 async function importXlsNilai() {
   if (!xlsNilaiParsed.nilai.length) return;
-  const kelasId = getActiveKelasId('nilai');
-  if (!kelasId) { showToast('Pilih kelas terlebih dahulu!', 'error'); return; }
+  const rombelId = getActiveRombelId('nilai');
+  if (!rombelId) { showToast('Pilih rombel terlebih dahulu!', 'error'); return; }
 
   const siswa = siswaCacheList;
   if (!siswa.length) {
@@ -316,7 +382,7 @@ async function importXlsNilai() {
 
   try {
     await API.post('saveNilai', {
-      kelasId,
+      kelasId: rombelId,
       mapel: JSON.stringify(nilaiData.mapel),
       nilai: JSON.stringify(nilaiData.nilai)
     });

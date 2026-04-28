@@ -1,12 +1,12 @@
-// ===== EKSTRAKURIKULER (per kelas) =====
+// ===== EKSTRAKURIKULER (per rombel) =====
 
 let ekskulData = { kegiatan: [], siswa: [], nilai: [] };
 
 async function loadEkskul() {
-  const kelasId = getActiveKelasId('ekskul');
-  if (!kelasId) { showToast('Pilih kelas terlebih dahulu!', 'error'); return; }
+  const rombelId = getActiveRombelId('ekskul');
+  if (!rombelId) { showToast('Pilih rombel terlebih dahulu!', 'error'); return; }
   try {
-    const data = await API.call('getEkskul', { kelasId });
+    const data = await API.call('getEkskul', { kelasId: rombelId });
     ekskulData = data;
     renderTabelEkskul();
     showToast('Data ekskul dimuat!', 'success');
@@ -69,11 +69,11 @@ function hapusKegiatan(ki) {
 }
 
 async function saveEkskul() {
-  const kelasId = getActiveKelasId('ekskul');
-  if (!kelasId) { showToast('Pilih kelas terlebih dahulu!', 'error'); return; }
+  const rombelId = getActiveRombelId('ekskul');
+  if (!rombelId) { showToast('Pilih rombel terlebih dahulu!', 'error'); return; }
   try {
     await API.post('saveEkskul', {
-      kelasId,
+      kelasId: rombelId,
       kegiatan: JSON.stringify(ekskulData.kegiatan),
       nilai:    JSON.stringify(ekskulData.nilai)
     });

@@ -49,12 +49,12 @@
       <h2>🛠️ Panel Admin</h2>
     </div>
     <div class="tab-bar">
-      <button class="tab-btn active" onclick="adminTab('kelas', this)">🏫 Kelola Kelas & Rombel</button>
+      <button class="tab-btn active" onclick="adminTab('kelas', this)">🏫 Kelola Rombel</button>
       <button class="tab-btn" onclick="adminTab('user', this)">👥 Kelola User</button>
       <button class="tab-btn" onclick="adminTab('gasurl', this)">🔗 URL Apps Script</button>
     </div>
 
-    <!-- Tab Kelas & Rombel (digabung) -->
+    <!-- Tab Kelas & Rombel -->
     <div id="adminTab-kelas" class="tab-content active">
       <!-- ROMBEL -->
       <div class="page-header" style="margin-top:16px;">
@@ -62,27 +62,12 @@
         <button class="btn-success" onclick="modalRombel()">➕ Tambah Rombel</button>
       </div>
       <div class="info-box" style="margin-bottom:12px;">
-        <p style="font-size:0.85rem;">Buat Rombel terlebih dahulu (misal: <em>Kelas 1, Kelas 2</em>) beserta daftar mata pelajarannya. Lalu tambahkan kelas (1A, 1B, 1C) dan pilih rombel yang sesuai — mapel otomatis diterapkan.</p>
-      </div>
-      <div class="table-wrapper" style="margin-bottom:24px;">
-        <table>
-          <thead><tr><th>No</th><th>ID Rombel</th><th>Nama Rombel</th><th>Wali Kelas</th><th>Daftar Mapel</th><th>Aksi</th></tr></thead>
-          <tbody id="bodyRombel"></tbody>
-        </table>
-      </div>
-
-      <!-- KELAS -->
-      <div class="page-header" style="margin-top:24px;">
-        <h3>🏫 Daftar Kelas</h3>
-        <div class="btn-group">
-          <button class="btn-success" onclick="modalKelas()">➕ Tambah Kelas</button>
-          <button class="btn-warning" onclick="modalBulkKelas()">➕➕ Tambah Banyak Kelas</button>
-        </div>
+        <p style="font-size:0.85rem;">Rombel adalah kelompok belajar yang berisi daftar mata pelajaran. Setiap rombel bisa ditugaskan ke wali kelas. Data siswa, nilai, ekskul, dan KKM disimpan per rombel.</p>
       </div>
       <div class="table-wrapper">
         <table>
-          <thead><tr><th>No</th><th>Nama Kelas</th><th>Rombel</th><th>Wali Kelas</th><th>Aksi</th></tr></thead>
-          <tbody id="bodyKelas"></tbody>
+          <thead><tr><th>No</th><th>ID Rombel</th><th>Nama Rombel</th><th>Wali Kelas</th><th>Daftar Mapel</th><th>Aksi</th></tr></thead>
+          <tbody id="bodyRombel"></tbody>
         </table>
       </div>
 
@@ -96,7 +81,7 @@
       </div>
       <div class="table-wrapper">
         <table id="tblUser">
-          <thead><tr><th>No</th><th>Username</th><th>Nama Lengkap</th><th>Role</th><th>Kelas</th><th>Aksi</th></tr></thead>
+          <thead><tr><th>No</th><th>Username</th><th>Nama Lengkap</th><th>Role</th><th>Rombel</th><th>Aksi</th></tr></thead>
           <tbody id="bodyUser"></tbody>
         </table>
       </div>
@@ -170,9 +155,9 @@
 
   <!-- ===== DATA SISWA ===== -->
   <div id="page-siswa" class="page">
-    <div id="adminKelasBar-siswa" class="admin-kelas-bar hidden">
-      <label>🏫 Kelas:</label>
-      <select id="adminKelasSelect-siswa" onchange="loadSiswa()"></select>
+    <div id="adminRombelBar-siswa" class="admin-kelas-bar hidden">
+      <label>🏫 Rombel:</label>
+      <select id="adminRombelSelect-siswa" onchange="loadSiswa()"></select>
     </div>
     <div class="page-header">
       <h2>👤 Data Siswa</h2>
@@ -183,6 +168,13 @@
         <a id="btnTemplateSiswa" class="btn-warning" style="padding:7px 14px;border-radius:6px;font-size:0.83rem;font-weight:600;text-decoration:none;cursor:pointer;" onclick="downloadTemplateSiswa()">📥 Template .xlsx</a>
       </div>
     </div>
+    
+    <!-- Peringatan jika rombel belum dipilih (untuk admin) -->
+    <div id="siswaRombelWarning" class="info-box" style="margin-bottom:14px;background:#fef2f2;border-color:#fecaca;display:none;">
+      <p style="font-size:0.88rem;font-weight:600;color:#dc2626;margin-bottom:4px;">⚠️ Pilih Rombel Terlebih Dahulu</p>
+      <p style="font-size:0.83rem;color:#555;margin:0;">Untuk mengelola data siswa, pilih rombel dari dropdown di atas. Template Excel dan upload akan disesuaikan dengan rombel yang dipilih.</p>
+    </div>
+
     <div class="table-wrapper">
       <table id="tblSiswa">
         <thead>
@@ -215,9 +207,9 @@
 
   <!-- ===== REKAP NILAI ===== -->
   <div id="page-nilai" class="page">
-    <div id="adminKelasBar-nilai" class="admin-kelas-bar hidden">
-      <label>🏫 Kelas:</label>
-      <select id="adminKelasSelect-nilai" onchange="loadNilai()"></select>
+    <div id="adminRombelBar-nilai" class="admin-kelas-bar hidden">
+      <label>🏫 Rombel:</label>
+      <select id="adminRombelSelect-nilai" onchange="loadNilai()"></select>
     </div>
     <div class="page-header">
       <h2>📊 Rekap Nilai</h2>
@@ -233,9 +225,9 @@
 
   <!-- ===== EKSTRAKURIKULER ===== -->
   <div id="page-ekskul" class="page">
-    <div id="adminKelasBar-ekskul" class="admin-kelas-bar hidden">
-      <label>🏫 Kelas:</label>
-      <select id="adminKelasSelect-ekskul" onchange="loadEkskul()"></select>
+    <div id="adminRombelBar-ekskul" class="admin-kelas-bar hidden">
+      <label>🏫 Rombel:</label>
+      <select id="adminRombelSelect-ekskul" onchange="loadEkskul()"></select>
     </div>
     <div class="page-header">
       <h2>🏆 Ekstrakurikuler</h2>
@@ -250,9 +242,9 @@
 
   <!-- ===== KKM ===== -->
   <div id="page-kkm" class="page">
-    <div id="adminKelasBar-kkm" class="admin-kelas-bar hidden">
-      <label>🏫 Kelas:</label>
-      <select id="adminKelasSelect-kkm" onchange="loadKKM()"></select>
+    <div id="adminRombelBar-kkm" class="admin-kelas-bar hidden">
+      <label>🏫 Rombel:</label>
+      <select id="adminRombelSelect-kkm" onchange="loadKKM()"></select>
     </div>
     <div class="page-header">
       <h2>📌 KKM</h2>
@@ -266,9 +258,9 @@
 
   <!-- ===== CETAK RAPOR ===== -->
   <div id="page-cetak" class="page">
-    <div id="adminKelasBar-cetak" class="admin-kelas-bar hidden no-print">
-      <label>🏫 Kelas:</label>
-      <select id="adminKelasSelect-cetak" onchange="loadCetakData()"></select>
+    <div id="adminRombelBar-cetak" class="admin-kelas-bar hidden no-print">
+      <label>🏫 Rombel:</label>
+      <select id="adminRombelSelect-cetak" onchange="loadCetakData()"></select>
     </div>
     <div class="page-header no-print">
       <h2>🖨️ Cetak Rapor</h2>
@@ -288,67 +280,6 @@
 
 </div><!-- end #mainApp -->
 
-<!-- Modal Kelas (Tambah / Edit satu kelas) -->
-<div id="modalKelas" class="modal hidden">
-  <div class="modal-content" style="max-width:480px;">
-    <h3 id="modalKelasTitle">Tambah Kelas</h3>
-    <input type="hidden" id="mk_id"/>
-    <div class="form-grid">
-      <div class="form-group full">
-        <label>Nama Kelas</label>
-        <input type="text" id="mk_nama" placeholder="contoh: Kelas 1A"/>
-      </div>
-      <div class="form-group full">
-        <label>Rombel <small style="color:#888;">(menentukan daftar mata pelajaran)</small></label>
-        <select id="mk_rombel">
-          <option value="">-- Pilih Rombel --</option>
-        </select>
-      </div>
-      <div class="form-group full">
-        <label>Wali Kelas</label>
-        <select id="mk_wali">
-          <option value="">-- Pilih Wali Kelas --</option>
-        </select>
-        <small style="color:#888;">Hanya menampilkan user dengan role Wali Kelas</small>
-      </div>
-    </div>
-    <div class="modal-actions">
-      <button class="btn-success" onclick="simpanKelas()">💾 Simpan Kelas</button>
-      <button class="btn-danger"  onclick="closeModal('modalKelas')">✖ Batal</button>
-    </div>
-  </div>
-</div>
-
-<!-- Modal Tambah Banyak Kelas Sekaligus -->
-<div id="modalBulkKelas" class="modal hidden">
-  <div class="modal-content" style="max-width:620px;">
-    <h3>➕ Tambah Banyak Kelas Sekaligus</h3>
-    <p style="font-size:0.85rem;color:#555;margin-bottom:14px;">Isi nama kelas, pilih rombel dan wali kelas. Semester & Tahun Pelajaran diambil dari Setting global.</p>
-    <div style="overflow-x:auto;">
-      <table style="width:100%;border-collapse:collapse;font-size:0.83rem;">
-        <thead>
-          <tr style="background:#1e3a5f;color:#fff;">
-            <th style="padding:7px 8px;width:32px;">No</th>
-            <th style="padding:7px 8px;">Nama Kelas *</th>
-            <th style="padding:7px 8px;">Rombel *</th>
-            <th style="padding:7px 8px;">Wali Kelas</th>
-            <th style="padding:7px 8px;width:36px;"></th>
-          </tr>
-        </thead>
-        <tbody id="bulkKelasBody"></tbody>
-      </table>
-    </div>
-    <div style="margin-top:10px;">
-      <button class="btn-primary" onclick="tambahBarisBulk()">➕ Tambah Baris</button>
-    </div>
-    <div id="bulkKelasError" style="color:#dc2626;font-size:0.83rem;margin-top:8px;"></div>
-    <div class="modal-actions">
-      <button class="btn-success" onclick="simpanBulkKelas()">💾 Simpan Semua Kelas</button>
-      <button class="btn-danger"  onclick="closeModal('modalBulkKelas')">✖ Batal</button>
-    </div>
-  </div>
-</div>
-
 <!-- Modal User -->
 <div id="modalUser" class="modal hidden">
   <div class="modal-content" style="max-width:480px;">
@@ -365,7 +296,7 @@
           <option value="walikelas">Wali Kelas</option>
           <option value="guruMapel">Guru Mapel</option>
         </select>
-        <small style="color:#888;margin-top:4px;">Penugasan kelas diatur di menu Kelola Kelas.</small>
+        <small style="color:#888;margin-top:4px;">Penugasan rombel diatur setelah user dibuat.</small>
       </div>
     </div>
     <div class="modal-actions">
@@ -456,40 +387,20 @@
   </div>
 </div>
 
-<!-- Modal Assign Kelas ke Guru Mapel -->
-<div id="modalAssignKelasGuru" class="modal hidden">
+<!-- Modal Assign Rombel ke Guru Mapel -->
+<div id="modalAssignRombelGuru" class="modal hidden">
   <div class="modal-content" style="max-width:480px;">
-    <h3>🏫 Assign Kelas ke Guru Mapel</h3>
+    <h3>🏫 Assign Rombel ke Guru Mapel</h3>
     <p style="font-size:0.85rem;color:#555;margin-bottom:14px;">
       Guru: <strong id="assignGuruLabel"></strong><br/>
-      Centang kelas yang boleh diisi nilainya oleh guru ini.
+      Centang rombel yang boleh diisi nilainya oleh guru ini.
     </p>
     <input type="hidden" id="assignGuruUsername"/>
-    <div id="assignKelasCheckboxes" style="display:flex;flex-direction:column;gap:6px;max-height:280px;overflow-y:auto;padding:8px;border:1px solid #e5e7eb;border-radius:6px;background:#f9fafb;margin-bottom:12px;"></div>
+    <div id="assignRombelCheckboxes" style="display:flex;flex-direction:column;gap:6px;max-height:280px;overflow-y:auto;padding:8px;border:1px solid #e5e7eb;border-radius:6px;background:#f9fafb;margin-bottom:12px;"></div>
     <p id="assignError" style="color:#dc2626;font-size:0.83rem;margin-bottom:4px;"></p>
     <div class="modal-actions">
-      <button class="btn-success" onclick="simpanAssignKelasGuru()">💾 Simpan</button>
-      <button class="btn-danger"  onclick="closeModal('modalAssignKelasGuru')">✖ Batal</button>
-    </div>
-  </div>
-</div>
-
-<!-- Modal Terapkan Rombel ke Kelas -->
-<div id="modalTerapkanRombel" class="modal hidden">
-  <div class="modal-content" style="max-width:480px;">
-    <h3>🏫 Terapkan Rombel ke Kelas</h3>
-    <p style="font-size:0.85rem;color:#555;margin-bottom:14px;">
-      Terapkan mapel dari Rombel <strong id="terapkanRombelLabel"></strong> ke kelas yang dipilih.
-      Nilai yang sudah ada akan dipertahankan.
-    </p>
-    <div class="form-group" style="margin-bottom:12px;">
-      <label>Pilih kelas tujuan:</label>
-      <div id="terapkanKelasCheckboxes" style="display:flex;flex-direction:column;gap:6px;max-height:240px;overflow-y:auto;padding:8px;border:1px solid #e5e7eb;border-radius:6px;background:#f9fafb;margin-top:6px;"></div>
-    </div>
-    <p id="terapkanError" style="color:#dc2626;font-size:0.83rem;margin-bottom:4px;"></p>
-    <div class="modal-actions">
-      <button class="btn-success" onclick="eksekusiTerapkanRombel()">✅ Terapkan</button>
-      <button class="btn-danger"  onclick="closeModal('modalTerapkanRombel')">✖ Batal</button>
+      <button class="btn-success" onclick="simpanAssignRombelGuru()">💾 Simpan</button>
+      <button class="btn-danger"  onclick="closeModal('modalAssignRombelGuru')">✖ Batal</button>
     </div>
   </div>
 </div>
@@ -504,10 +415,30 @@
 <div id="modalUploadSiswa" class="modal hidden">
   <div class="modal-content" style="max-width:520px;">
     <h3>📤 Upload Data Siswa (Excel)</h3>
+    
+    <!-- Info Rombel Tujuan -->
+    <div style="background:#dcfce7;border:1px solid #86efac;border-radius:6px;padding:10px;margin-bottom:12px;">
+      <p id="uploadSiswaRombelInfo" style="font-size:0.88rem;font-weight:600;color:#15803d;margin:0;">
+        Rombel Tujuan: -
+      </p>
+    </div>
+
+    <div class="info-box" style="margin-bottom:16px;background:#fef2f2;border-color:#fecaca;">
+      <p style="font-size:0.85rem;font-weight:600;color:#dc2626;margin-bottom:6px;">⚠️ PENTING:</p>
+      <ul style="font-size:0.83rem;color:#555;margin:0;padding-left:20px;">
+        <li>Pilih <strong>rombel tujuan</strong> terlebih dahulu di halaman Data Siswa</li>
+        <li>Download template untuk rombel tersebut (tombol 📥 Template)</li>
+        <li>Isi data siswa di file Excel</li>
+        <li>Upload file - siswa akan masuk ke rombel yang dipilih</li>
+      </ul>
+    </div>
+
     <div class="info-box" style="margin-bottom:16px;">
-      <p style="font-size:0.85rem;">Upload file <strong>.xlsx</strong> sesuai template. Kolom: <strong>NISN, No Induk, Nama Siswa, Nama Panggilan, Tempat Lahir, Tanggal Lahir, Nama Orang Tua, Pesan Wali Kelas</strong></p>
+      <p style="font-size:0.85rem;font-weight:600;margin-bottom:4px;">📋 Format File:</p>
+      <p style="font-size:0.83rem;margin:0;">Upload file <strong>.xlsx</strong> sesuai template. Kolom: <strong>NISN, No Induk, Nama Siswa, Nama Panggilan, Tempat Lahir, Tanggal Lahir, Nama Orang Tua, Pesan Wali Kelas</strong></p>
       <p style="font-size:0.83rem;margin-top:6px;color:#555;">Tanggal Lahir isi sebagai teks format <code>YYYY-MM-DD</code> (contoh: 2010-05-17) atau format tanggal Excel biasa.</p>
     </div>
+
     <div class="form-group" style="margin-bottom:8px;">
       <label>Pilih file Excel (.xlsx / .xls)</label>
       <input type="file" id="xlsSiswaFile" accept=".xlsx,.xls" style="padding:6px;"/>

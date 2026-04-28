@@ -1,15 +1,15 @@
-// ===== KKM (per kelas) =====
+// ===== KKM (per rombel) =====
 
 let kkmData = {};
 let kkmMapelList = [];
 
 async function loadKKM() {
-  const kelasId = getActiveKelasId('kkm');
-  if (!kelasId) { showToast('Pilih kelas terlebih dahulu!', 'error'); return; }
+  const rombelId = getActiveRombelId('kkm');
+  if (!rombelId) { showToast('Pilih rombel terlebih dahulu!', 'error'); return; }
   try {
     const [kkmRes, nilaiRes] = await Promise.all([
-      API.call('getKKM', { kelasId }),
-      API.call('getNilai', { kelasId })
+      API.call('getKKM', { kelasId: rombelId }),
+      API.call('getNilai', { kelasId: rombelId })
     ]);
     kkmData     = kkmRes.kkm || {};
     kkmMapelList = nilaiRes.mapel || [];
@@ -46,10 +46,10 @@ function updateKKM(mapel, val) {
 }
 
 async function saveKKM() {
-  const kelasId = getActiveKelasId('kkm');
-  if (!kelasId) { showToast('Pilih kelas terlebih dahulu!', 'error'); return; }
+  const rombelId = getActiveRombelId('kkm');
+  if (!rombelId) { showToast('Pilih rombel terlebih dahulu!', 'error'); return; }
   try {
-    await API.post('saveKKM', { kelasId, kkm: JSON.stringify(kkmData) });
+    await API.post('saveKKM', { kelasId: rombelId, kkm: JSON.stringify(kkmData) });
     showToast('KKM disimpan!', 'success');
   } catch(e) {}
 }

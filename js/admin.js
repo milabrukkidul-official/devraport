@@ -1,22 +1,18 @@
 // ===== ADMIN =====
 
-let adminKelasCache = [];
 let adminUserCache  = [];
 
 async function loadAdminData() {
   const token = API.getToken();
   if (!token) { showToast('Sesi tidak valid, silakan login ulang.', 'error'); return; }
   try {
-    const [kRes, uRes, rRes] = await Promise.all([
-      API.call('getKelas'),
+    const [uRes, rRes] = await Promise.all([
       API.call('getUsers'),
       API.call('getRombel')
     ]);
-    adminKelasCache = kRes.kelas || [];
     adminUserCache  = uRes.users || [];
     rombelCache     = rRes.rombel || [];
     renderTabelRombel();
-    renderTabelKelas();
     renderTabelUser();
     onRombelListLoaded(rombelCache);
   } catch(e) {}
@@ -38,173 +34,6 @@ function buildWaliSelect(id, sel = '') {
   list.forEach(u => { h += `<option value="${u.username}" ${u.username===sel?'selected':''}>${u.nama}</option>`; });
   return h + '</select>';
 }
-function buildRombelOptions(sel = '') {
-  let o = '<option value="">-- Pilih Rombel --</option>';
-  rombelCache.forEach(r => { o += `<option value="${r.id}" ${r.id===sel?'selected':''}>${r.nama} (${r.mapel.length} mapel)</option>`; });
-  if (!rombelCache.length) o += '<option value="" disabled>Belum ada rombel</option>';
-  return o;
-}
-function buildRombelSelect(id, sel = '') {
-  let h = `<select id="${id}" style="width:100%;padding:5px 4px;border:1px solid #d1d5db;border-radius:4px;font-size:0.78rem;"><option value="">-- Pilih Rombel --</option>`;
-  rombelCache.forEach(r => { h += `<option value="${r.id}" ${r.id===sel?'selected':''}>${r.nama}</option>`; });
-  return h + '</select>';
-}
-
-// ============================================================
-// KELAS — ID otomatis dari nama kelas (slug)
-// ============================================================
-function namaKeKelasId(nama) {
-  return nama.trim().toLowerCase()
-    .replace(/\s+/g, '_')
-    .replace(/[^a-z0-9_]/g, '');
-}
-
-function renderTabelKelas() {
-  const tbody = document.getElementById('bodyKelas');
-  tbody.innerHTML = '';
-  if (!adminKelasCache.length) {
-    tbody.innerHTML = '<tr><td colspan="5" class="hint">Belum ada kelas. Buat Rombel dulu, lalu tambah kelas.</td></tr>';
-    return;
-  }
-  adminKelasCache.forEach((k, i) => {
-    const rombelNama = rombelCache.find(r => r.id === k.rombelId)?.nama || k.rombelId || '-';
-    const tr = document.createElement('tr');
-    tr.innerHTML = `
-      <td>${i+1}</td>
-      <td><strong>${k.nama}</strong> <small style="color:#888;">(${k.id})</small></td>
-      <td><span style="background:#e0f2fe;color:#0369a1;padding:2px 8px;border-radius:12px;font-size:0.78rem;">${rombelNama}</span></td>
-      <td>${k.waliNama||k.wali||'-'}</td>
-      <td style="white-space:nowrap;">
-        <button class="btn-warning" onclick="modalKelas(${i})" style="padding:3px 8px;font-size:0.78rem;">✏️</button>
-        <button class="btn-danger" onclick="hapusKelas('${k.id}')" style="padding:3px 8px;font-size:0.78rem;margin-left:4px;">🗑️</button>
-      </td>`;
-    tbody.appendChild(tr);
-  });
-}
-
-function modalKelas(idx) {
-  const isEdit = idx !== undefined;
-  document.getElementById('modalKelasTitle').textContent = isEdit ? 'Edit Kelas' : 'Tambah Kelas';
-  document.getElementById('mk_wali').innerHTML   = buildWaliOptions();
-  document.getElementById('mk_rombel').innerHTML = buildRombelOptions();
-  if (isEdit) {
-    const k = adminKelasCache[idx];
-    document.getElementById('mk_id').value             = k.id;
-    document.getElementById('mk_nama').value           = k.nama;
-    document.getElementById('mk_rombel').innerHTML     = buildRombelOptions(k.rombelId || '');
-    document.getElementById('mk_wali').innerHTML       = buildWaliOptions(k.wali);
-  } else {
-    document.getElementById('mk_id').value   = '';
-    document.getElementById('mk_nama').value = '';
-  }
-  document.getElementById('modalKelas').classList.remove('hidden');
-}
-
-async function simpanKelas() {
-  const nama     = document.getElementById('mk_nama').value.trim();
-  const rombelId = document.getElementById('mk_rombel').value;
-  const wali     = document.getElementById('mk_wali').value;
-  const idLama   = document.getElementById('mk_id').value;
-
-  if (!nama)     { showToast('Nama Kelas wajib diisi!', 'error'); return; }
-  if (!rombelId) { showToast('Pilih Rombel terlebih dahulu!', 'error'); return; }
-
-  // ID otomatis dari nama kelas jika baru
-  const id = idLama || namaKeKelasId(nama);
-  if (!id) { showToast('Nama kelas tidak valid untuk dijadikan ID!', 'error'); return; }
-
-  try {
-    await API.post('saveKelas', { kelas: JSON.stringify({ id, nama, rombelId, wali }) });
-    closeModal('modalKelas');
-    showToast(`Kelas "${nama}" disimpan!`, 'success');
-    await loadAdminData();
-  } catch(e) {}
-}
-
-async function hapusKelas(id) {
-  if (!confirm(`Hapus kelas "${id}"?\nSEMUA data (siswa, nilai, ekskul, KKM) akan terhapus permanen!`)) return;
-  try { await API.post('deleteKelas', { kelasId: id }); showToast('Kelas dihapus!', 'success'); await loadAdminData(); } catch(e) {}
-}
-
-// ============================================================
-// BULK KELAS
-// ============================================================
-let bulkKelasRows = 0;
-
-function modalBulkKelas() {
-  bulkKelasRows = 0;
-  document.getElementById('bulkKelasBody').innerHTML = '';
-  document.getElementById('bulkKelasError').textContent = '';
-  tambahBarisBulk(); tambahBarisBulk(); tambahBarisBulk();
-  document.getElementById('modalBulkKelas').classList.remove('hidden');
-}
-
-function tambahBarisBulk() {
-  bulkKelasRows++;
-  const n = bulkKelasRows;
-  const tr = document.createElement('tr');
-  tr.id = `bkRow_${n}`;
-  tr.style.background = n%2===0 ? '#f8fafc' : '#fff';
-  tr.innerHTML = `
-    <td style="padding:4px 6px;text-align:center;color:#888;">${n}</td>
-    <td style="padding:4px 6px;">
-      <input type="text" id="bk_nama_${n}" placeholder="Kelas 1A"
-        style="width:100%;padding:5px 7px;border:1px solid #d1d5db;border-radius:4px;font-size:0.82rem;"/>
-    </td>
-    <td style="padding:4px 6px;">${buildRombelSelect(`bk_rombel_${n}`)}</td>
-    <td style="padding:4px 6px;">${buildWaliSelect(`bk_wali_${n}`)}</td>
-    <td style="padding:4px 6px;text-align:center;">
-      <button onclick="hapusBarisBulk(${n})"
-        style="background:#dc2626;color:#fff;border:none;border-radius:4px;padding:3px 7px;cursor:pointer;font-size:0.8rem;">✖</button>
-    </td>`;
-  document.getElementById('bulkKelasBody').appendChild(tr);
-}
-
-function hapusBarisBulk(n) { document.getElementById(`bkRow_${n}`)?.remove(); }
-
-async function simpanBulkKelas() {
-  const errEl = document.getElementById('bulkKelasError');
-  errEl.textContent = '';
-  const kelasList = [], namaSet = new Set();
-
-  for (let i = 1; i <= bulkKelasRows; i++) {
-    const namaEl = document.getElementById(`bk_nama_${i}`);
-    if (!namaEl) continue;
-    const nama     = namaEl.value.trim();
-    const rombelId = document.getElementById(`bk_rombel_${i}`)?.value || '';
-    if (!nama && !rombelId) continue; // baris kosong
-
-    if (!nama)     { errEl.textContent = `Baris ${i}: Nama Kelas wajib!`; return; }
-    if (!rombelId) { errEl.textContent = `Baris ${i}: Pilih Rombel!`; return; }
-
-    const id = namaKeKelasId(nama);
-    if (!id) { errEl.textContent = `Baris ${i}: Nama "${nama}" tidak valid!`; return; }
-    if (namaSet.has(id)) { errEl.textContent = `Nama "${nama}" duplikat!`; return; }
-    namaSet.add(id);
-
-    kelasList.push({
-      id, nama, rombelId,
-      wali: document.getElementById(`bk_wali_${i}`)?.value || ''
-    });
-  }
-
-  if (!kelasList.length) { errEl.textContent = 'Tidak ada kelas!'; return; }
-
-  const dup = kelasList.filter(k => adminKelasCache.some(e => e.id === k.id));
-  if (dup.length) { errEl.textContent = `Kelas sudah ada: ${dup.map(k=>k.nama).join(', ')}`; return; }
-
-  showLoading(true);
-  let ok = 0; const fail = [];
-  for (const k of kelasList) {
-    try { await API.post('saveKelas', { kelas: JSON.stringify(k) }); ok++; }
-    catch { fail.push(k.nama); }
-  }
-  showLoading(false);
-  closeModal('modalBulkKelas');
-  fail.length ? showToast(`${ok} disimpan, gagal: ${fail.join(', ')}`, 'error')
-              : showToast(`✅ ${ok} kelas ditambahkan!`, 'success');
-  await loadAdminData();
-}
 
 // ============================================================
 // USER
@@ -215,15 +44,15 @@ function renderTabelUser() {
   if (!adminUserCache.length) { tbody.innerHTML='<tr><td colspan="6" class="hint">Belum ada user.</td></tr>'; return; }
   const rl = { admin:'🔴 Admin', walikelas:'🟡 Wali Kelas', guruMapel:'🟢 Guru Mapel' };
   adminUserCache.forEach((u,i) => {
-    let kelasLabel = u.kelasId || '-';
-    try { const a = JSON.parse(u.kelasId); if (Array.isArray(a)) kelasLabel = a.length ? a.join(', ') : '-'; } catch(e) {}
+    let rombelLabel = u.rombelId || '-';
+    try { const a = JSON.parse(u.rombelId); if (Array.isArray(a)) rombelLabel = a.length ? a.join(', ') : '-'; } catch(e) {}
     const assignBtn = u.role === 'guruMapel'
-      ? `<button class="btn-primary" onclick="modalAssignKelasGuru('${u.username}')" style="padding:3px 8px;font-size:0.78rem;margin-left:4px;" title="Assign Kelas">🏫</button>`
+      ? `<button class="btn-primary" onclick="modalAssignRombelGuru('${u.username}')" style="padding:3px 8px;font-size:0.78rem;margin-left:4px;" title="Assign Rombel">🏫</button>`
       : '';
     const tr = document.createElement('tr');
     tr.innerHTML = `<td>${i+1}</td><td><strong>${u.username}</strong></td><td>${u.nama}</td>
       <td>${rl[u.role]||u.role}</td>
-      <td style="font-size:0.8rem;max-width:160px;">${kelasLabel}</td>
+      <td style="font-size:0.8rem;max-width:160px;">${rombelLabel}</td>
       <td style="white-space:nowrap;">
         <button class="btn-warning" onclick="modalUser(${i})" style="padding:3px 8px;font-size:0.78rem;">✏️</button>
         ${assignBtn}
@@ -254,7 +83,7 @@ function modalUser(idx) {
   }
   document.getElementById('modalUser').classList.remove('hidden');
 }
-function toggleUserKelas() {}
+function toggleUserRombel() {}
 async function simpanUser() {
   const idx = parseInt(document.getElementById('mu_idx').value);
   const username = document.getElementById('mu_username').value.trim();
@@ -264,7 +93,7 @@ async function simpanUser() {
   if (!username||!nama) { showToast('Username dan Nama wajib!','error'); return; }
   if (idx===-1&&!password) { showToast('Password wajib untuk user baru!','error'); return; }
   try {
-    await API.post('saveUser',{user:JSON.stringify({username,password,nama,role,kelasId:''}),isNew:idx===-1});
+    await API.post('saveUser',{user:JSON.stringify({username,password,nama,role,rombelId:''}),isNew:idx===-1});
     closeModal('modalUser'); showToast('User disimpan!','success'); await loadAdminData();
   } catch(e) {}
 }
@@ -448,47 +277,42 @@ async function simpanRombel() {
   } catch(e) {}
 }
 async function hapusRombel(id) {
-  const kelasYangPakai = adminKelasCache.filter(k => k.rombelId === id);
-  if (kelasYangPakai.length) {
-    showToast(`Rombel dipakai oleh: ${kelasYangPakai.map(k=>k.nama).join(', ')}. Hapus kelas dulu!`, 'error');
-    return;
-  }
-  if (!confirm(`Hapus rombel "${id}"?`)) return;
+  if (!confirm(`Hapus rombel "${id}"?\nSEMUA data (siswa, nilai, ekskul, KKM) akan terhapus permanen!`)) return;
   try { await API.post('deleteRombel',{rombelId:id}); showToast('Rombel dihapus!','success'); await loadAdminData(); } catch(e) {}
 }
 
 // ============================================================
-// ASSIGN KELAS KE GURU MAPEL
+// ASSIGN ROMBEL KE GURU MAPEL
 // ============================================================
-function modalAssignKelasGuru(username) {
+function modalAssignRombelGuru(username) {
   const user = adminUserCache.find(u => u.username === username);
   if (!user) return;
   document.getElementById('assignGuruUsername').value = username;
   document.getElementById('assignGuruLabel').textContent = `${user.nama} (${username})`;
   document.getElementById('assignError').textContent = '';
   let assigned = [];
-  try { const p = JSON.parse(user.kelasId); if (Array.isArray(p)) assigned = p; } catch(e) { if (user.kelasId) assigned = [user.kelasId]; }
-  const box = document.getElementById('assignKelasCheckboxes');
+  try { const p = JSON.parse(user.rombelId); if (Array.isArray(p)) assigned = p; } catch(e) { if (user.rombelId) assigned = [user.rombelId]; }
+  const box = document.getElementById('assignRombelCheckboxes');
   box.innerHTML = '';
-  if (!adminKelasCache.length) { box.innerHTML='<p style="color:#888;font-size:0.85rem;">Belum ada kelas.</p>'; }
+  if (!rombelCache.length) { box.innerHTML='<p style="color:#888;font-size:0.85rem;">Belum ada rombel.</p>'; }
   else {
-    adminKelasCache.forEach(k => {
+    rombelCache.forEach(r => {
       const lbl = document.createElement('label');
       lbl.style.cssText = 'display:flex;align-items:center;gap:8px;cursor:pointer;font-size:0.88rem;padding:4px 0;';
-      lbl.innerHTML = `<input type="checkbox" value="${k.id}" ${assigned.includes(k.id)?'checked':''} style="width:16px;height:16px;"/>
-        <span>${k.nama} <small style="color:#888;">(${k.id})</small></span>`;
+      lbl.innerHTML = `<input type="checkbox" value="${r.id}" ${assigned.includes(r.id)?'checked':''} style="width:16px;height:16px;"/>
+        <span>${r.nama} <small style="color:#888;">(${r.id})</small></span>`;
       box.appendChild(lbl);
     });
   }
-  document.getElementById('modalAssignKelasGuru').classList.remove('hidden');
+  document.getElementById('modalAssignRombelGuru').classList.remove('hidden');
 }
-async function simpanAssignKelasGuru() {
-  const username  = document.getElementById('assignGuruUsername').value;
-  const kelasList = [...document.querySelectorAll('#assignKelasCheckboxes input:checked')].map(c=>c.value);
+async function simpanAssignRombelGuru() {
+  const username   = document.getElementById('assignGuruUsername').value;
+  const rombelList = [...document.querySelectorAll('#assignRombelCheckboxes input:checked')].map(c=>c.value);
   try {
-    await API.post('saveGuruKelas',{username,kelasList});
-    closeModal('modalAssignKelasGuru');
-    showToast(`Kelas untuk ${username} disimpan (${kelasList.length} kelas)!`,'success');
+    await API.post('saveGuruRombel',{username,rombelList});
+    closeModal('modalAssignRombelGuru');
+    showToast(`Rombel untuk ${username} disimpan (${rombelList.length} rombel)!`,'success');
     await loadAdminData();
   } catch(e) {}
 }

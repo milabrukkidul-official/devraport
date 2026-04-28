@@ -1,12 +1,19 @@
-// ===== DATA SISWA (per kelas) =====
+// ===== DATA SISWA (per rombel) =====
 
 let siswaCacheList = [];
 
 async function loadSiswa() {
-  const kelasId = getActiveKelasId('siswa');
-  if (!kelasId) { showToast('Pilih kelas terlebih dahulu!', 'error'); return; }
+  const rombelId = getActiveRombelId('siswa');
+  
+  // Tampilkan/sembunyikan peringatan untuk admin
+  const warning = document.getElementById('siswaRombelWarning');
+  if (warning) {
+    warning.style.display = !rombelId ? 'block' : 'none';
+  }
+  
+  if (!rombelId) { showToast('Pilih rombel terlebih dahulu!', 'error'); return; }
   try {
-    const data = await API.call('getSiswa', { kelasId });
+    const data = await API.call('getSiswa', { kelasId: rombelId });
     siswaCacheList = data.siswa || [];
     renderTabelSiswa(siswaCacheList);
     showToast('Data siswa dimuat!', 'success');
@@ -64,8 +71,8 @@ function editSiswa(idx) {
 }
 
 async function simpanSiswa() {
-  const kelasId = getActiveKelasId('siswa');
-  if (!kelasId) { showToast('Pilih kelas terlebih dahulu!', 'error'); return; }
+  const rombelId = getActiveRombelId('siswa');
+  if (!rombelId) { showToast('Pilih rombel terlebih dahulu!', 'error'); return; }
   const idx = parseInt(document.getElementById('ms_rowIndex').value);
   const siswa = {
     nisn:        document.getElementById('ms_nisn').value.trim(),
@@ -79,7 +86,7 @@ async function simpanSiswa() {
   };
   if (!siswa.nama) { showToast('Nama siswa wajib diisi!', 'error'); return; }
   try {
-    await API.post('saveSiswa', { kelasId, siswa: JSON.stringify(siswa), rowIndex: idx });
+    await API.post('saveSiswa', { kelasId: rombelId, siswa: JSON.stringify(siswa), rowIndex: idx });
     closeModal('modalSiswa');
     showToast('Data siswa disimpan!', 'success');
     await loadSiswa();
@@ -88,10 +95,10 @@ async function simpanSiswa() {
 
 async function hapusSiswa(idx) {
   if (!confirm('Hapus data siswa ini?')) return;
-  const kelasId = getActiveKelasId('siswa');
-  if (!kelasId) return;
+  const rombelId = getActiveRombelId('siswa');
+  if (!rombelId) return;
   try {
-    await API.post('deleteSiswa', { kelasId, rowIndex: idx });
+    await API.post('deleteSiswa', { kelasId: rombelId, rowIndex: idx });
     showToast('Data siswa dihapus!', 'success');
     await loadSiswa();
   } catch(e) {}
