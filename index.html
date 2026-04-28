@@ -67,7 +67,10 @@
     <div id="adminTab-kelas" class="tab-content active">
       <div class="page-header" style="margin-top:16px;">
         <h3>Daftar Kelas</h3>
-        <button class="btn-success" onclick="modalKelas()">➕ Tambah Kelas</button>
+        <div class="btn-group">
+          <button class="btn-success" onclick="modalKelas()">➕ Tambah Kelas</button>
+          <button class="btn-primary" onclick="modalBulkKelas()">📋 Tambah Banyak Kelas</button>
+        </div>
       </div>
       <div class="table-wrapper">
         <table id="tblKelas">
@@ -259,26 +262,89 @@
 
 </div><!-- end #mainApp -->
 
-<!-- Modal Kelas -->
+<!-- Modal Kelas (Tambah / Edit satu kelas) -->
 <div id="modalKelas" class="modal hidden">
-  <div class="modal-content">
+  <div class="modal-content" style="max-width:560px;">
     <h3 id="modalKelasTitle">Tambah Kelas</h3>
     <input type="hidden" id="mk_id"/>
     <div class="form-grid">
-      <div class="form-group"><label>ID Kelas (unik, tanpa spasi)</label><input type="text" id="mk_id_input" placeholder="kelas_1a"/></div>
-      <div class="form-group"><label>Nama Kelas</label><input type="text" id="mk_nama" placeholder="Kelas 1A"/></div>
-      <div class="form-group"><label>Wali Kelas (username)</label><input type="text" id="mk_wali" placeholder="username wali kelas"/></div>
-      <div class="form-group"><label>Semester</label>
+      <div class="form-group">
+        <label>ID Kelas <small style="color:#888;">(unik, huruf/angka/underscore)</small></label>
+        <input type="text" id="mk_id_input" placeholder="contoh: kelas_1a" oninput="autoNamaKelas()"/>
+      </div>
+      <div class="form-group">
+        <label>Nama Kelas</label>
+        <input type="text" id="mk_nama" placeholder="contoh: Kelas 1A"/>
+      </div>
+      <div class="form-group">
+        <label>Wali Kelas <small style="color:#888;">(username)</small></label>
+        <input type="text" id="mk_wali" placeholder="username wali kelas (opsional)"/>
+      </div>
+      <div class="form-group">
+        <label>Semester</label>
         <select id="mk_semester">
           <option value="I (GANJIL)">I (GANJIL)</option>
           <option value="II (GENAP)">II (GENAP)</option>
         </select>
       </div>
-      <div class="form-group"><label>Tahun Pelajaran</label><input type="text" id="mk_tahun" placeholder="2024/2025"/></div>
+      <div class="form-group">
+        <label>Tahun Pelajaran</label>
+        <input type="text" id="mk_tahun" placeholder="2024/2025"/>
+      </div>
     </div>
     <div class="modal-actions">
-      <button class="btn-success" onclick="simpanKelas()">💾 Simpan</button>
-      <button class="btn-danger" onclick="closeModal('modalKelas')">✖ Batal</button>
+      <button class="btn-success" onclick="simpanKelas()">💾 Simpan Kelas</button>
+      <button class="btn-danger"  onclick="closeModal('modalKelas')">✖ Batal</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Tambah Banyak Kelas Sekaligus -->
+<div id="modalBulkKelas" class="modal hidden">
+  <div class="modal-content" style="max-width:700px;">
+    <h3>➕ Tambah Banyak Kelas Sekaligus</h3>
+    <p style="font-size:0.85rem;color:#555;margin-bottom:14px;">
+      Isi tabel di bawah. Klik <strong>+ Baris</strong> untuk menambah kelas. Semester dan Tahun Pelajaran berlaku untuk semua baris kecuali diubah per baris.
+    </p>
+    <div style="display:flex;gap:10px;align-items:center;margin-bottom:12px;flex-wrap:wrap;">
+      <div class="form-group" style="flex:1;min-width:140px;">
+        <label>Semester (default)</label>
+        <select id="bk_semesterDefault">
+          <option value="I (GANJIL)">I (GANJIL)</option>
+          <option value="II (GENAP)">II (GENAP)</option>
+        </select>
+      </div>
+      <div class="form-group" style="flex:1;min-width:120px;">
+        <label>Tahun Pelajaran (default)</label>
+        <input type="text" id="bk_tahunDefault" placeholder="2024/2025"/>
+      </div>
+      <div style="padding-top:20px;">
+        <button class="btn-primary" onclick="applyDefaultBulk()">↩ Terapkan ke Semua</button>
+      </div>
+    </div>
+    <div style="overflow-x:auto;">
+      <table style="width:100%;border-collapse:collapse;font-size:0.83rem;">
+        <thead>
+          <tr style="background:#1e3a5f;color:#fff;">
+            <th style="padding:7px 8px;width:32px;">No</th>
+            <th style="padding:7px 8px;">ID Kelas *</th>
+            <th style="padding:7px 8px;">Nama Kelas *</th>
+            <th style="padding:7px 8px;">Wali Kelas (username)</th>
+            <th style="padding:7px 8px;width:120px;">Semester</th>
+            <th style="padding:7px 8px;width:100px;">Tahun</th>
+            <th style="padding:7px 8px;width:36px;"></th>
+          </tr>
+        </thead>
+        <tbody id="bulkKelasBody"></tbody>
+      </table>
+    </div>
+    <div style="margin-top:10px;">
+      <button class="btn-primary" onclick="tambahBarisBulk()">➕ Tambah Baris</button>
+    </div>
+    <div id="bulkKelasError" style="color:#dc2626;font-size:0.83rem;margin-top:8px;"></div>
+    <div class="modal-actions">
+      <button class="btn-success" onclick="simpanBulkKelas()">💾 Simpan Semua Kelas</button>
+      <button class="btn-danger"  onclick="closeModal('modalBulkKelas')">✖ Batal</button>
     </div>
   </div>
 </div>
