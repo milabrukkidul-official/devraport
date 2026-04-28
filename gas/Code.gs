@@ -31,16 +31,31 @@ function shName(kelasId, suffix) {
 }
 
 // ===== AUTH =====
+// Token format: "username|base64(username:password)"
+// Dikirim via URL sudah di-encodeURIComponent, GAS decode otomatis via e.parameter
+
+function makeToken_(username, password) {
+  // Gunakan separator | agar tidak bentrok dengan karakter base64
+  const hash = Utilities.base64Encode(username + ':' + password);
+  return username + '|' + hash;
+}
+
 function verifyToken(token) {
   if (!token) return null;
-  const parts = token.split(':');
-  if (parts.length < 2) return null;
-  const username = parts[0];
-  const users = getUsers_().users;
+  // Decode jika masih ter-encode (jaga-jaga)
+  try { token = decodeURIComponent(token); } catch(e) {}
+
+  const sep = token.indexOf('|');
+  if (sep < 0) return null;
+  const username = token.substring(0, sep);
+  const hash     = token.substring(sep + 1);
+
+  const { users } = getUsers_();
   const user = users.find(u => u.username === username);
   if (!user) return null;
+
   const expected = Utilities.base64Encode(username + ':' + user.password);
-  if (parts[1] !== expected) return null;
+  if (hash !== expected) return null;
   return user;
 }
 function isAdmin(token) {
@@ -128,7 +143,7 @@ function login_(username, password, kelasId) {
     if (user.kelasId !== kelasId) return { success: false, message: 'Anda tidak memiliki akses ke kelas ini.' };
   }
 
-  const token = user.username + ':' + Utilities.base64Encode(user.username + ':' + user.password);
+  const token = makeToken_(user.username, user.password);
   return {
     success: true,
     user: {
