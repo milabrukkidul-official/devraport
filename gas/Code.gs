@@ -76,24 +76,36 @@ function canEditNilai(token, kelasId) {
 }
 
 // ===== ROUTER =====
-// Semua request bertoken dikirim via POST (token aman di body JSON).
-// doGet hanya untuk endpoint publik tanpa token.
+// Semua request dikirim via POST dari frontend.
+// doGet tetap difungsikan sebagai fallback agar tidak error.
 function doGet(e) {
   const p = e.parameter;
   try {
     switch(p.action) {
       case 'getKelasPublic': return R(getKelasPublic_());
       case 'login':          return R(login_(p.username, p.password, p.kelasId));
-      default:               return R({ error: 'Gunakan POST untuk action ini.' });
+      // Fallback: forward ke doPost logic dengan token dari query param
+      default:
+        const fakeBody = Object.assign({ token: p.token || '' }, p);
+        return handleAction_(fakeBody);
     }
   } catch(err) { return R({ error: err.message }); }
 }
 
 function doPost(e) {
-  const body = JSON.parse(e.postData.contents);
+  try {
+    const body = JSON.parse(e.postData.contents);
+    return handleAction_(body);
+  } catch(err) { return R({ error: err.message }); }
+}
+
+function handleAction_(body) {
   try {
     switch(body.action) {
-      // ── Admin read (dipindah ke POST agar token aman) ──
+      // ── Publik (tanpa token) ──
+      case 'login':         return R(login_(body.username, body.password, body.kelasId));
+      case 'getKelasPublic':return R(getKelasPublic_());
+      // ── Admin read ──
       case 'getKelas':      return R(requireAdmin(body.token, () => getKelasPublic_()));
       case 'getUsers':      return R(requireAdmin(body.token, () => getUsers_()));
       // ── Per-kelas read ──
@@ -102,8 +114,6 @@ function doPost(e) {
       case 'getNilai':      return R(requireNilai(body.token, body.kelasId, () => getNilai_(body.kelasId)));
       case 'getKKM':        return R(requireKelas(body.token, body.kelasId, () => getKKM_(body.kelasId)));
       case 'getEkskul':     return R(requireKelas(body.token, body.kelasId, () => getEkskul_(body.kelasId)));
-      // ── Login (tidak butuh token) ──
-      case 'login':         return R(login_(body.username, body.password, body.kelasId));
       // ── Admin write ──
       case 'saveKelas':     return R(requireAdmin(body.token, () => saveKelas_(body)));
       case 'deleteKelas':   return R(requireAdmin(body.token, () => deleteKelas_(body)));
