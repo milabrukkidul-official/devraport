@@ -24,8 +24,13 @@ const API = {
     }
     showLoading(true);
     try {
-      const params = new URLSearchParams({ action, token: this.getToken(), ...payload });
-      const res = await fetch(`${url}?${params.toString()}`);
+      // Token di-encode agar karakter +/= tidak rusak di URL
+      const params = new URLSearchParams({
+        action,
+        token: encodeURIComponent(this.getToken()),
+        ...payload
+      });
+      const res  = await fetch(`${url}?${params.toString()}`);
       const data = await res.json();
       if (data.error) throw new Error(data.error);
       return data;
