@@ -54,7 +54,6 @@ function renderTabelSiswa(list) {
       <td>${s.tempatLahir||''}</td>
       <td>${formatTanggal(s.tglLahir)}</td>
       <td>${s.namaOrtu||''}</td>
-      <td style="max-width:160px;white-space:normal;">${s.pesan||''}</td>
       <td>
         <button class="btn-warning" onclick="editSiswa(${i})" style="padding:3px 8px;font-size:0.78rem;">✏️</button>
         <button class="btn-danger"  onclick="hapusSiswa(${i})" style="padding:3px 8px;font-size:0.78rem;margin-left:4px;">🗑️</button>
@@ -66,7 +65,7 @@ function renderTabelSiswa(list) {
 function tambahSiswa() {
   document.getElementById('modalSiswaTitle').textContent = 'Tambah Siswa';
   document.getElementById('ms_rowIndex').value = '-1';
-  ['ms_nisn','ms_noInduk','ms_nama','ms_panggilan','ms_tempatLahir','ms_tglLahir','ms_namaOrtu','ms_pesan']
+  ['ms_nisn','ms_noInduk','ms_nama','ms_panggilan','ms_tempatLahir','ms_tglLahir','ms_namaOrtu']
     .forEach(id => document.getElementById(id).value = '');
   document.getElementById('modalSiswa').classList.remove('hidden');
 }
@@ -82,7 +81,6 @@ function editSiswa(idx) {
   document.getElementById('ms_tempatLahir').value= s.tempatLahir||'';
   document.getElementById('ms_tglLahir').value   = s.tglLahir||'';
   document.getElementById('ms_namaOrtu').value   = s.namaOrtu||'';
-  document.getElementById('ms_pesan').value      = s.pesan||'';
   document.getElementById('modalSiswa').classList.remove('hidden');
 }
 
@@ -98,7 +96,7 @@ async function simpanSiswa() {
     tempatLahir: document.getElementById('ms_tempatLahir').value.trim(),
     tglLahir:    document.getElementById('ms_tglLahir').value,
     namaOrtu:    document.getElementById('ms_namaOrtu').value.trim(),
-    pesan:       document.getElementById('ms_pesan').value.trim(),
+    pesan:       (siswaCacheList[idx] && siswaCacheList[idx].pesan) ? siswaCacheList[idx].pesan : '',
   };
   if (!siswa.nama) { showToast('Nama siswa wajib diisi!', 'error'); return; }
   try {
