@@ -66,4 +66,6 @@
   .rapor-section-title { background: #ddd !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
   .rapor-kop-text { border: 2px solid #000 !important; }
   .rapor-divider { border-top: 3px double #000 !important; }
+  /* Subheader muatan lokal saat print */
+  .rapor-nilai-table tr td[colspan="6"] { background: #ddd !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
 }
