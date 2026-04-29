@@ -167,11 +167,14 @@ function renderRapor() {
     rangkingSiswa = uniqueSorted.indexOf(jumlahNilai) + 1;
   }
 
-  // Baris jumlah di bawah tabel nilai (di kolom Nilai)
+  // Baris jumlah di bawah tabel nilai (di kolom Nilai), rangking di pojok kanan
   const jumlahRow = `<tr style="font-weight:bold;background:#f0fdf4;">
     <td colspan="3" style="text-align:right;font-style:italic;">Jumlah Nilai</td>
     <td style="text-align:center;">${jumlahNilaiStr}</td>
-    <td colspan="2"></td>
+    <td style="text-align:center;"></td>
+    <td style="text-align:right;font-size:9pt;">
+      Rangking&nbsp;:&nbsp;<span style="font-size:11pt;">${rangkingSiswa}</span>
+    </td>
   </tr>`;
 
   // ===== EKSKUL (hanya yang terisi) =====
@@ -227,28 +230,22 @@ function renderRapor() {
     </div>
 
     <div class="rapor-section-title">A. NILAI MATA PELAJARAN</div>
-    <div style="display:flex;align-items:flex-start;gap:12px;">
-      <table class="rapor-nilai-table" style="flex:1;">
-        <thead>
-          <tr>
-            <th style="width:32px;">No</th>
-            <th>Mata Pelajaran</th>
-            <th style="width:48px;">KKM</th>
-            <th style="width:48px;">Nilai</th>
-            <th style="width:60px;">Predikat</th>
-            <th>Deskripsi</th>
-          </tr>
-        </thead>
-        <tbody>
-          ${nilaiRows || '<tr><td colspan="6" style="text-align:center;">Belum ada data nilai</td></tr>'}
-          ${jumlahRow}
-        </tbody>
-      </table>
-      <table class="rapor-rangking-table">
-        <thead><tr><th>Rangking</th></tr></thead>
-        <tbody><tr><td>${rangkingSiswa}</td></tr></tbody>
-      </table>
-    </div>
+    <table class="rapor-nilai-table">
+      <thead>
+        <tr>
+          <th style="width:32px;">No</th>
+          <th>Mata Pelajaran</th>
+          <th style="width:48px;">KKM</th>
+          <th style="width:48px;">Nilai</th>
+          <th style="width:60px;">Predikat</th>
+          <th>Deskripsi</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${nilaiRows || '<tr><td colspan="6" style="text-align:center;">Belum ada data nilai</td></tr>'}
+        ${jumlahRow}
+      </tbody>
+    </table>
 
     ${adaEkskul ? `
     <div class="rapor-section-title">${sekEkskul}. EKSTRAKURIKULER</div>
