@@ -79,12 +79,18 @@ function canAccessRombel(token, rombelId) {
   const u = verifyToken(token);
   if (!u) return false;
   if (u.role === 'admin') return true;
-  // Normalize rombelId untuk perbandingan (trim dan lowercase)
-  const userRombelId = (u.rombelId || '').toString().trim().toLowerCase();
   const requestedRombelId = (rombelId || '').toString().trim().toLowerCase();
-  // Debug: log untuk melihat apakah rombelId cocok
+  const userRombelId = (u.rombelId || '').toString().trim().toLowerCase();
   Logger.log('canAccessRombel - user: ' + u.username + ', role: ' + u.role + ', user.rombelId: "' + userRombelId + '", requested: "' + requestedRombelId + '"');
-  return userRombelId === requestedRombelId;
+  if (userRombelId === requestedRombelId) return true;
+  // guruMapel: cek via rombelId array ATAU via mapelGuru di rombel
+  if (u.role === 'guruMapel') {
+    const rombelList = parseRombelId_(u.rombelId);
+    if (rombelList.map(id => id.toLowerCase()).includes(requestedRombelId)) return true;
+    // Cek apakah guru ini ada di mapelGuru rombel yang diminta
+    return isGuruDiRombel_(u.username, rombelId);
+  }
+  return false;
 }
 
 function canEditNilai(token, rombelId) {
@@ -92,23 +98,38 @@ function canEditNilai(token, rombelId) {
   if (!u) return false;
   if (u.role === 'admin') return true;
   if (!rombelId) return false;
-  
-  // Normalize rombelId untuk perbandingan
   const requestedRombelId = (rombelId || '').toString().trim().toLowerCase();
-  
   if (u.role === 'walikelas') {
     const userRombelId = (u.rombelId || '').toString().trim().toLowerCase();
     return userRombelId === requestedRombelId;
   }
-  
-  // guruMapel: rombelId bisa berupa JSON array atau string tunggal
   if (u.role === 'guruMapel') {
     const rombelList = parseRombelId_(u.rombelId);
-    // Normalize semua rombelId di list
-    const normalizedList = rombelList.map(id => (id || '').toString().trim().toLowerCase());
-    return normalizedList.includes(requestedRombelId);
+    if (rombelList.map(id => id.toLowerCase()).includes(requestedRombelId)) return true;
+    // Cek via mapelGuru di rombel
+    return isGuruDiRombel_(u.username, rombelId);
   }
   return false;
+}
+
+// Cek apakah username guru ada di mapelGuru rombel tertentu
+function isGuruDiRombel_(username, rombelId) {
+  try {
+    const { rombel } = getRombel_();
+    const info = rombel.find(r => r.id.toLowerCase() === (rombelId || '').toLowerCase());
+    if (!info || !info.mapelGuru) return false;
+    return Object.values(info.mapelGuru).includes(username);
+  } catch(e) { return false; }
+}
+
+// Ambil semua rombelId yang punya username ini di mapelGuru
+function getRombelByGuruMapel_(username) {
+  try {
+    const { rombel } = getRombel_();
+    return rombel
+      .filter(r => r.mapelGuru && Object.values(r.mapelGuru).includes(username))
+      .map(r => r.id);
+  } catch(e) { return []; }
 }
 
 // ===== ROUTER =====
@@ -212,7 +233,11 @@ function login_(username, password) {
   if (user.role === 'admin') {
     userRombelId = '';
   } else if (user.role === 'guruMapel') {
-    userRombelId = parseRombelId_(user.rombelId); // array
+    // Gabungkan: rombelId yang di-assign manual + rombel yang punya username ini di mapelGuru
+    const fromUser  = parseRombelId_(user.rombelId);
+    const fromMapel = getRombelByGuruMapel_(user.username);
+    const merged    = [...new Set([...fromUser, ...fromMapel])];
+    userRombelId    = merged;
   } else {
     userRombelId = user.rombelId || ''; // string
   }
@@ -392,7 +417,11 @@ function saveRombel_(body) {
   
   const row = [r.id, r.nama, r.wali || '', waliNama, JSON.stringify(r.mapel || []), JSON.stringify(r.mapelGuru || {})];
   if (found > 0) {
-    sh.getRange(found, 1, 1, 5).setValues([row]);
+    // Pastikan sheet punya cukup kolom (migrasi dari 5 → 6 kolom)
+    if (sh.getLastColumn() < 6) {
+      sh.getRange(1, 6, sh.getLastRow(), 1).setValue('');
+    }
+    sh.getRange(found, 1, 1, 6).setValues([row]);
     // Jika mapel berubah, update sheet nilai
     if (JSON.stringify(mapelLama) !== JSON.stringify(r.mapel)) {
       syncMapelToNilai_(r.id, r.mapel);
