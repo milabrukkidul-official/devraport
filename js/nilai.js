@@ -22,8 +22,7 @@ async function loadNilai() {
     }
     nilaiData = data;
     renderTabelNilai();
-    showToast('Data nilai dimuat!', 'success');
-  } catch(e) {
+    showToast('Data nilai dimuat!', 'success');  } catch(e) {
     showToast('Error memuat data nilai: ' + e.message, 'error');
     console.error('Error loadNilai:', e);
   }
@@ -68,20 +67,33 @@ function hitungRangking(siswa, nilai, jumlahMapel) {
 function renderTabelNilai() {
   const container = document.getElementById('nilaiContainer');
   const { mapel, siswa, nilai } = nilaiData;
-  const isAdmin = currentUser?.role === 'admin';
 
   if (!siswa || !siswa.length) {
     container.innerHTML = '<p class="hint">Belum ada data siswa di kelas ini.</p>';
     return;
   }
   if (!mapel || !mapel.length) {
-    container.innerHTML = `<p class="hint">Belum ada mata pelajaran.${isAdmin ? ' Tambahkan di panel Admin → Kelola Mapel.' : ' Hubungi admin untuk menambahkan mata pelajaran.'}</p>`;
+    const isAdminCheck = currentUser?.role === 'admin';
+    container.innerHTML = `<p class="hint">Belum ada mata pelajaran.${isAdminCheck ? ' Tambahkan di panel Admin → Kelola Mapel.' : ' Hubungi admin untuk menambahkan mata pelajaran.'}</p>`;
     return;
   }
 
   // Hitung jumlah & rangking
-  const jumlahArr  = siswa.map((s, si) => hitungJumlahNilai(nilai[si], mapel.length));
+  const jumlahArr   = siswa.map((s, si) => hitungJumlahNilai(nilai[si], mapel.length));
   const rangkingArr = hitungRangking(siswa, nilai, mapel.length);
+
+  // Tentukan kolom mana yang boleh diedit user ini
+  const isAdmin     = currentUser?.role === 'admin';
+  const isWali      = currentUser?.role === 'walikelas';
+  const mapelGuru   = nilaiData.mapelGuru || {};
+  // Admin & wali kelas bisa edit semua; guruMapel hanya mapel yang di-assign
+  const bolehEditMapel = (mi) => {
+    if (isAdmin || isWali) return true;
+    const namaMapel = mapel[mi];
+    return mapelGuru[namaMapel] === currentUser?.username;
+  };
+  // Sakit/ijin/alpa hanya admin & wali
+  const bolehEditKehadiran = isAdmin || isWali;
 
   let html = `<div style="overflow-x:auto;"><table>
     <thead><tr>
@@ -95,9 +107,14 @@ function renderTabelNilai() {
   siswa.forEach((s, si) => {
     html += `<tr><td>${si+1}</td><td style="white-space:nowrap;">${s.nama}</td>`;
     mapel.forEach((m, mi) => {
-      const val = (nilai[si] && nilai[si][mi] !== undefined) ? nilai[si][mi] : '';
+      const val    = (nilai[si] && nilai[si][mi] !== undefined) ? nilai[si][mi] : '';
+      const boleh  = bolehEditMapel(mi);
+      const style  = boleh
+        ? 'width:65px;'
+        : 'width:65px;background:#f3f4f6;color:#9ca3af;cursor:not-allowed;';
       html += `<td><input type="number" min="0" max="100" value="${val}"
-               onchange="updateNilai(${si},${mi},this.value)" style="width:65px;"/></td>`;
+               ${boleh ? `onchange="updateNilai(${si},${mi},this.value)"` : 'disabled'}
+               style="${style}" title="${boleh ? '' : 'Anda tidak memiliki akses untuk mapel ini'}"/></td>`;
     });
     // Jumlah & Rangking (read-only, dihitung otomatis)
     const jml = jumlahArr[si] !== '' ? jumlahArr[si] : '-';
@@ -107,12 +124,14 @@ function renderTabelNilai() {
     const sakit = (nilai[si] && nilai[si]['sakit']) ? nilai[si]['sakit'] : '';
     const ijin  = (nilai[si] && nilai[si]['ijin'])  ? nilai[si]['ijin']  : '';
     const alpa  = (nilai[si] && nilai[si]['alpa'])  ? nilai[si]['alpa']  : '';
-    html += `<td><input type="number" min="0" value="${sakit}" onchange="updateKehadiran(${si},'sakit',this.value)" style="width:50px;"/></td>`;
-    html += `<td><input type="number" min="0" value="${ijin}"  onchange="updateKehadiran(${si},'ijin',this.value)"  style="width:50px;"/></td>`;
-    html += `<td><input type="number" min="0" value="${alpa}"  onchange="updateKehadiran(${si},'alpa',this.value)"  style="width:50px;"/></td>`;
-    // Pesan Wali Kelas — diambil dari data siswa, disimpan via updatePesan
+    const kdis  = bolehEditKehadiran ? '' : 'disabled style="background:#f3f4f6;color:#9ca3af;cursor:not-allowed;"';
+    html += `<td><input type="number" min="0" value="${sakit}" ${bolehEditKehadiran ? `onchange="updateKehadiran(${si},'sakit',this.value)"` : 'disabled'} style="width:50px;${bolehEditKehadiran?'':'background:#f3f4f6;color:#9ca3af;'}"/></td>`;
+    html += `<td><input type="number" min="0" value="${ijin}"  ${bolehEditKehadiran ? `onchange="updateKehadiran(${si},'ijin',this.value)"`  : 'disabled'} style="width:50px;${bolehEditKehadiran?'':'background:#f3f4f6;color:#9ca3af;'}"/></td>`;
+    html += `<td><input type="number" min="0" value="${alpa}"  ${bolehEditKehadiran ? `onchange="updateKehadiran(${si},'alpa',this.value)"`  : 'disabled'} style="width:50px;${bolehEditKehadiran?'':'background:#f3f4f6;color:#9ca3af;'}"/></td>`;
+    // Pesan Wali Kelas — hanya admin & wali yang bisa edit
     const pesan = (s.pesan !== undefined) ? s.pesan : '';
-    html += `<td><textarea rows="2" onchange="updatePesan(${si},this.value)" style="width:170px;font-size:0.78rem;resize:vertical;">${pesan}</textarea></td>`;
+    html += `<td><textarea rows="2" ${bolehEditKehadiran ? `onchange="updatePesan(${si},this.value)"` : 'disabled'}
+      style="width:170px;font-size:0.78rem;resize:vertical;${bolehEditKehadiran?'':'background:#f3f4f6;color:#9ca3af;'}">${pesan}</textarea></td>`;
     html += `</tr>`;
   });
   html += `</tbody></table></div>`;
