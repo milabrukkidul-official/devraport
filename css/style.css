@@ -180,7 +180,11 @@ td textarea { min-width: 140px; resize: vertical; }
   position: fixed; inset: 0;
   background: rgba(15, 23, 42, 0.65);
   backdrop-filter: blur(3px);
-  display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 999;
+  display: none;
+  flex-direction: column; align-items: center; justify-content: center; z-index: 999;
+}
+.loading-overlay.visible {
+  display: flex;
 }
 
 .spinner {
