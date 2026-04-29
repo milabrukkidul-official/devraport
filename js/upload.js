@@ -282,9 +282,11 @@ function getMapelBolehEdit() {
 }
 
 function downloadTemplateNilai() {
-  const siswa = siswaCacheList;
+  // Siswa tersedia di nilaiData.siswa (halaman nilai) atau siswaCacheList (halaman siswa)
+  const siswa = (nilaiData.siswa && nilaiData.siswa.length) ? nilaiData.siswa : siswaCacheList;
+
   if (!siswa.length) {
-    showToast('Muat data siswa terlebih dahulu!', 'error');
+    showToast('Muat data nilai terlebih dahulu!', 'error');
     return;
   }
 
@@ -420,9 +422,9 @@ async function importXlsNilai() {
   const rombelId = getActiveRombelId('nilai');
   if (!rombelId) { showToast('Pilih rombel terlebih dahulu!', 'error'); return; }
 
-  const siswa = siswaCacheList;
+  const siswa = (nilaiData.siswa && nilaiData.siswa.length) ? nilaiData.siswa : siswaCacheList;
   if (!siswa.length) {
-    showToast('Muat data siswa terlebih dahulu!', 'error');
+    showToast('Muat data nilai terlebih dahulu!', 'error');
     return;
   }
 
