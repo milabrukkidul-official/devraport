@@ -90,7 +90,7 @@ function renderTabelNilai() {
     html += `<th style="min-width:90px;">${m}</th>`;
   });
   html += `<th style="min-width:70px;">Jumlah</th><th style="min-width:70px;">Rangking</th>`;
-  html += `<th>Sakit</th><th>Ijin</th><th>Alpa</th></tr></thead><tbody>`;
+  html += `<th>Sakit</th><th>Ijin</th><th>Alpa</th><th style="min-width:180px;">Pesan Wali Kelas</th></tr></thead><tbody>`;
 
   siswa.forEach((s, si) => {
     html += `<tr><td>${si+1}</td><td style="white-space:nowrap;">${s.nama}</td>`;
@@ -110,6 +110,9 @@ function renderTabelNilai() {
     html += `<td><input type="number" min="0" value="${sakit}" onchange="updateKehadiran(${si},'sakit',this.value)" style="width:50px;"/></td>`;
     html += `<td><input type="number" min="0" value="${ijin}"  onchange="updateKehadiran(${si},'ijin',this.value)"  style="width:50px;"/></td>`;
     html += `<td><input type="number" min="0" value="${alpa}"  onchange="updateKehadiran(${si},'alpa',this.value)"  style="width:50px;"/></td>`;
+    // Pesan Wali Kelas — diambil dari data siswa, disimpan via updatePesan
+    const pesan = (s.pesan !== undefined) ? s.pesan : '';
+    html += `<td><textarea rows="2" onchange="updatePesan(${si},this.value)" style="width:170px;font-size:0.78rem;resize:vertical;">${pesan}</textarea></td>`;
     html += `</tr>`;
   });
   html += `</tbody></table></div>`;
@@ -142,6 +145,12 @@ function refreshJumlahRangking() {
 function updateKehadiran(si, key, val) {
   if (!nilaiData.nilai[si]) nilaiData.nilai[si] = {};
   nilaiData.nilai[si][key] = val;
+}
+
+// Update pesan wali kelas langsung di data siswa (disimpan bersama saveNilai)
+function updatePesan(si, val) {
+  if (!nilaiData.siswa[si]) return;
+  nilaiData.siswa[si].pesan = val;
 }
 
 // tambahMapel & hapusMapel hanya dipanggil dari panel admin
@@ -177,11 +186,23 @@ async function saveNilai() {
   const rombelId = getActiveRombelId('nilai');
   if (!rombelId) { showToast('Pilih rombel terlebih dahulu!', 'error'); return; }
   try {
+    // Simpan nilai
     await API.post('saveNilai', {
       kelasId: rombelId,
       mapel: JSON.stringify(nilaiData.mapel),
       nilai: JSON.stringify(nilaiData.nilai)
     });
-    showToast('Data nilai disimpan!', 'success');
-  } catch(e) {}
+    // Simpan pesan wali kelas untuk setiap siswa (batch)
+    const savePromises = nilaiData.siswa.map((s, si) =>
+      API.post('saveSiswa', {
+        kelasId: rombelId,
+        rowIndex: String(si),
+        siswa: JSON.stringify(s)
+      })
+    );
+    await Promise.all(savePromises);
+    showToast('Data nilai & pesan wali disimpan!', 'success');
+  } catch(e) {
+    showToast('Error menyimpan: ' + e.message, 'error');
+  }
 }
