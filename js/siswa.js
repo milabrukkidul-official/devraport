@@ -96,7 +96,6 @@ async function simpanSiswa() {
     tempatLahir: document.getElementById('ms_tempatLahir').value.trim(),
     tglLahir:    document.getElementById('ms_tglLahir').value,
     namaOrtu:    document.getElementById('ms_namaOrtu').value.trim(),
-    pesan:       (siswaCacheList[idx] && siswaCacheList[idx].pesan) ? siswaCacheList[idx].pesan : '',
   };
   if (!siswa.nama) { showToast('Nama siswa wajib diisi!', 'error'); return; }
   try {
