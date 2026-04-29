@@ -23,7 +23,14 @@ function showPage(name) {
 }
 
 function showLoading(show) {
-  document.getElementById('loadingOverlay').classList.toggle('hidden', !show);
+  const el = document.getElementById('loadingOverlay');
+  if (show) {
+    el.classList.remove('hidden');
+    el.classList.add('visible');
+  } else {
+    el.classList.remove('visible');
+    el.classList.add('hidden');
+  }
 }
 
 function showToast(msg, type = 'info') {
