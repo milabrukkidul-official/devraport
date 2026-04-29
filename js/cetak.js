@@ -124,24 +124,61 @@ function renderRapor() {
   const ttl    = [s.tempatLahir, tglFmt].filter(Boolean).join(', ');
 
   // ===== TABEL NILAI =====
+  // Pisahkan mapel utama dan muatan lokal
+  // MAPEL_MULOK didefinisikan di admin.js, akses via window atau fallback
+  const daftarMulok = (typeof MAPEL_MULOK !== 'undefined' ? MAPEL_MULOK : [
+    'Bahasa Daerah', 'Bahasa Inggris', 'Pego'
+  ]);
+
+  // Kelompokkan: utama dulu, lalu mulok
+  const mapelUtama = mapel.filter(m => !daftarMulok.includes(m));
+  const mapelMulok = mapel.filter(m =>  daftarMulok.includes(m));
+  const adaMulok   = mapelMulok.length > 0;
+
+  // Buat baris nilai dengan subheader MUATAN LOKAL jika ada
   let nilaiRows = '';
-  mapel.forEach((m, mi) => {
+  let noCounter = 1;
+
+  // Fungsi bantu render satu baris nilai
+  const buatBaris = (m, mi) => {
     const nVal     = (nilaiSiswa[mi] !== undefined && nilaiSiswa[mi] !== '') ? nilaiSiswa[mi] : '';
     const kkmVal   = kkm[m] !== undefined ? kkm[m] : 70;
     const predikat = nVal !== '' ? hitungPredikat(nVal, kkmVal) : '-';
     const predClass= predikat !== '-' ? `predikat-${predikat}` : '';
     const deskripsi= nVal !== '' ? deskripsiPredikat(predikat, s.panggilan || s.nama, m) : '-';
-    nilaiRows += `<tr>
-      <td>${mi+1}</td>
+    return `<tr>
+      <td>${noCounter++}</td>
       <td>${m}</td>
       <td>${kkmVal}</td>
       <td>${nVal !== '' ? nVal : '-'}</td>
       <td class="${predClass}">${predikat}</td>
       <td>${deskripsi}</td>
     </tr>`;
+  };
+
+  // Render mapel utama
+  mapelUtama.forEach(m => {
+    const mi = mapel.indexOf(m);
+    nilaiRows += buatBaris(m, mi);
   });
 
+  // Render subheader + mapel mulok (hanya jika ada)
+  if (adaMulok) {
+    nilaiRows += `<tr>
+      <td colspan="6" style="background:#e8ecf4;font-weight:bold;font-size:9.5pt;
+        padding:3px 6px;border:1px solid #000;text-align:left;
+        border-left:4px solid #1e3a5f;">
+        Muatan Lokal
+      </td>
+    </tr>`;
+    mapelMulok.forEach(m => {
+      const mi = mapel.indexOf(m);
+      nilaiRows += buatBaris(m, mi);
+    });
+  }
+
   // ===== HITUNG JUMLAH NILAI & RANGKING =====
+  // Jumlah dari semua mapel (utama + mulok)
   let jumlahNilai = 0;
   let adaNilai = false;
   mapel.forEach((_m, mi) => {
