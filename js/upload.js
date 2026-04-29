@@ -141,14 +141,14 @@ function downloadTemplateSiswa() {
   const headers = [
     'NISN', 'No Induk', 'Nama Siswa', 'Nama Panggilan',
     'Tempat Lahir', 'Tanggal Lahir (YYYY-MM-DD)',
-    'Nama Orang Tua', 'Pesan Wali Kelas'
+    'Nama Orang Tua'
   ];
   const contoh = [
-    ['1234567890', '001', 'Ahmad Fauzi',  'Fauzi', 'Jakarta', '2010-05-17', 'Budi Santoso',  'Siswa rajin dan aktif'],
-    ['0987654321', '002', 'Siti Rahayu',  'Siti',  'Bandung', '2010-08-23', 'Hendra Wijaya', ''],
-    ['1122334455', '003', 'Budi Prasetyo', 'Budi', 'Surabaya','2010-11-01', 'Agus Wibowo',   'Perlu perhatian lebih'],
+    ['1234567890', '001', 'Ahmad Fauzi',   'Fauzi', 'Jakarta',  '2010-05-17', 'Budi Santoso' ],
+    ['0987654321', '002', 'Siti Rahayu',   'Siti',  'Bandung',  '2010-08-23', 'Hendra Wijaya'],
+    ['1122334455', '003', 'Budi Prasetyo', 'Budi',  'Surabaya', '2010-11-01', 'Agus Wibowo'  ],
   ];
-  const lebar = [14, 10, 22, 14, 14, 22, 22, 30];
+  const lebar = [14, 10, 22, 14, 14, 22, 22];
   const wb = buatWorkbook('DATA SISWA', headers, contoh, lebar);
 
   // Tambah sheet petunjuk dengan info rombel
@@ -174,7 +174,7 @@ function downloadTemplateSiswa() {
     [''],
     ['KOLOM OPSIONAL:'],
     ['• NISN, No Induk, Nama Panggilan, Tempat Lahir, Tanggal Lahir,'],
-    ['  Nama Orang Tua, Pesan Wali Kelas - boleh dikosongkan'],
+    ['  Nama Orang Tua - boleh dikosongkan'],
   ];
   const wsPetunjuk = XLSX.utils.aoa_to_sheet(petunjukData);
   wsPetunjuk['!cols'] = [{ wch: 70 }];
@@ -245,7 +245,6 @@ function previewXlsSiswa() {
       tempatLahir: String(r[4] ?? ''),
       tglLahir:    excelDateToString(r[5]),
       namaOrtu:    String(r[6] ?? ''),
-      pesan:       String(r[7] ?? ''),
     })).filter(s => s.nama.trim());
 
     document.getElementById('xlsSiswaPreview').innerHTML =
