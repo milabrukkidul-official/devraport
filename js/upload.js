@@ -368,7 +368,20 @@ function previewXlsNilai() {
         '<p style="color:#dc2626;">File tidak valid atau kosong.</p>';
       return;
     }
-    const header     = rows[0].map(String);
+    const header = rows[0].map(String);
+
+    // Validasi: kolom pertama harus "Nama Siswa", bukan template siswa (NISN)
+    const kolomPertama = (header[0] || '').trim().toLowerCase();
+    if (kolomPertama !== 'nama siswa') {
+      document.getElementById('xlsNilaiPreview').innerHTML =
+        `<p style="color:#dc2626;font-weight:600;">
+          ❌ File tidak sesuai. Kolom pertama harus <strong>Nama Siswa</strong>, 
+          bukan "<strong>${header[0]}</strong>".<br/>
+          Pastikan Anda menggunakan template dari tombol 📥 Template .xlsx di halaman Rekap Nilai.
+        </p>`;
+      document.getElementById('btnImportNilai').disabled = true;
+      return;
+    }
     const data       = rows.slice(1).filter(r => r[0]);
     const mapelBoleh = getMapelBolehEdit();
     const isWaliOrAdmin = currentUser?.role === 'admin' || currentUser?.role === 'walikelas';
