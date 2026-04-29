@@ -62,7 +62,7 @@
   /* Colors for print */
   .rapor-nilai-table th,
   .rapor-ekskul-table th,
-  .rapor-kehadiran-table th { background: #ccc !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  .rapor-kehadiran-table th { background: #ccc !important; color: #000 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
   .rapor-section-title { background: #ddd !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
   .rapor-kop-text { border: 2px solid #000 !important; }
   .rapor-divider { border-top: 3px double #000 !important; }
