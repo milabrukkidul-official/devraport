@@ -141,6 +141,34 @@ function renderRapor() {
     </tr>`;
   });
 
+  // ===== HITUNG JUMLAH NILAI & RANGKING =====
+  // Jumlah nilai siswa ini
+  let jumlahNilai = 0;
+  let adaNilai = false;
+  mapel.forEach((m, mi) => {
+    const v = nilaiSiswa[mi] !== undefined && nilaiSiswa[mi] !== '' ? parseFloat(nilaiSiswa[mi]) : null;
+    if (v !== null && !isNaN(v)) { jumlahNilai += v; adaNilai = true; }
+  });
+  const jumlahNilaiStr = adaNilai ? jumlahNilai : '-';
+
+  // Rangking: hitung dari semua siswa di rombel
+  const jumlahSemuaSiswa = siswa.map((ss, ssi) => {
+    const nr = nilai[ssi] || {};
+    let tot = 0; let ada = false;
+    mapel.forEach((m, mi) => {
+      const v = nr[mi] !== undefined && nr[mi] !== '' ? parseFloat(nr[mi]) : null;
+      if (v !== null && !isNaN(v)) { tot += v; ada = true; }
+    });
+    return ada ? tot : -Infinity;
+  });
+  const sorted = [...jumlahSemuaSiswa].sort((a, b) => b - a);
+  let rangkingSiswa = '-';
+  if (adaNilai) {
+    // Dense ranking
+    const uniqueSorted = [...new Set(sorted.filter(v => v !== -Infinity))].sort((a, b) => b - a);
+    rangkingSiswa = uniqueSorted.indexOf(jumlahNilai) + 1;
+  }
+
   // ===== EKSKUL (hanya yang terisi) =====
   let ekskulRows = '';
   let adaEkskul  = false;
@@ -166,9 +194,11 @@ function renderRapor() {
   const tglRaporFmt = formatTanggal(setting.tglRapor);
   const tempatTgl   = [setting.tempatRapor, tglRaporFmt].filter(Boolean).join(', ');
 
-  // Huruf seksi
-  const sekB = adaEkskul ? 'C' : 'B';
-  const sekC = adaEkskul ? 'D' : 'C';
+  // Huruf seksi (Catatan Wali Kelas dipindah sebelum Ketidakhadiran)
+  let sekIdx = adaEkskul ? 3 : 2; // B=Ekskul (jika ada), lalu Catatan, lalu Ketidakhadiran
+  const sekEkskul  = 'B';
+  const sekCatatan = adaEkskul ? 'C' : 'B';
+  const sekHadir   = adaEkskul ? 'D' : 'C';
 
   const html = `
   <div class="rapor-page">
@@ -210,7 +240,7 @@ function renderRapor() {
     </table>
 
     ${adaEkskul ? `
-    <div class="rapor-section-title">B. EKSTRAKURIKULER</div>
+    <div class="rapor-section-title">${sekEkskul}. EKSTRAKURIKULER</div>
     <table class="rapor-ekskul-table">
       <thead><tr>
         <th style="width:32px;">No</th>
@@ -220,19 +250,27 @@ function renderRapor() {
       <tbody>${ekskulRows}</tbody>
     </table>` : ''}
 
-    <div class="rapor-section-title">${sekB}. KETIDAKHADIRAN</div>
+    ${s.pesan ? `
+    <div class="rapor-section-title">${sekCatatan}. CATATAN WALI KELAS</div>
+    <div class="rapor-catatan">${s.pesan}</div>` : ''}
+
+    <div class="rapor-section-title">${sekHadir}. KETIDAKHADIRAN</div>
     <table class="rapor-kehadiran-table">
-      <thead><tr><th>Sakit</th><th>Ijin</th><th>Alpa</th></tr></thead>
+      <thead><tr>
+        <th>Jumlah Nilai</th>
+        <th>Rangking</th>
+        <th>Sakit</th>
+        <th>Ijin</th>
+        <th>Alpa</th>
+      </tr></thead>
       <tbody><tr>
+        <td style="font-weight:bold;">${jumlahNilaiStr}</td>
+        <td style="font-weight:bold;">${rangkingSiswa}</td>
         <td>${sakit} hari</td>
         <td>${ijin} hari</td>
         <td>${alpa} hari</td>
       </tr></tbody>
     </table>
-
-    ${s.pesan ? `
-    <div class="rapor-section-title">${sekC}. CATATAN WALI KELAS</div>
-    <div class="rapor-catatan">${s.pesan}</div>` : ''}
 
     <div class="rapor-tempat-tgl">${tempatTgl}</div>
 
