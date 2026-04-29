@@ -134,12 +134,22 @@ window.addEventListener('DOMContentLoaded', () => {
 });
 
 // Guru mapel: bangun selector rombel di halaman nilai
-function buildGuruKelasSelector() {
+async function buildGuruKelasSelector() {
   const rombelList = Array.isArray(currentUser.rombelId) ? currentUser.rombelId : [];
   if (!rombelList.length) {
     showToast('Anda belum ditugaskan ke rombel manapun. Hubungi admin.', 'error');
     return;
   }
+
+  // Ambil nama rombel dari server agar tampil nama lengkap
+  let rombelNamaMap = {};
+  try {
+    const res = await API.call('getRombel');
+    (res.rombel || []).forEach(r => { rombelNamaMap[r.id] = r.nama || r.id; });
+  } catch(e) {
+    rombelList.forEach(id => { rombelNamaMap[id] = id; });
+  }
+
   // Isi selector rombel di halaman nilai
   const bar = document.getElementById('adminRombelBar-nilai');
   const sel = document.getElementById('adminRombelSelect-nilai');
@@ -149,10 +159,10 @@ function buildGuruKelasSelector() {
     rombelList.forEach(rid => {
       const opt = document.createElement('option');
       opt.value = rid;
-      opt.textContent = rid;
+      opt.textContent = rombelNamaMap[rid] || rid;
       sel.appendChild(opt);
     });
-    // Jika hanya 1 rombel, langsung pilih
+    // Jika hanya 1 rombel, langsung pilih dan load
     if (rombelList.length === 1) {
       sel.value = rombelList[0];
       loadNilai();
