@@ -178,46 +178,48 @@ td textarea { min-width: 140px; resize: vertical; }
 /* ===== LOADING (Block Loader) ===== */
 .loading-overlay {
   position: fixed; inset: 0;
-  background: rgba(15, 23, 42, 0.65);
+  background: rgba(15, 23, 42, 0.72);
   backdrop-filter: blur(3px);
   display: none;
-  flex-direction: column; align-items: center; justify-content: center; z-index: 999;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  z-index: 999;
 }
 .loading-overlay.visible {
-  display: flex;
+  display: flex !important;
 }
 
 .spinner {
   display: flex;
-  gap: 6px;
+  gap: 5px;
   align-items: flex-end;
-  height: 48px;
-  margin-bottom: 18px;
+  height: 50px;
+  margin-bottom: 16px;
 }
 
 .spinner span {
-  display: block;
+  display: inline-block;
   width: 10px;
-  border-radius: 3px;
-  background: #3b82f6;
-  animation: blockBounce 1s ease-in-out infinite;
+  border-radius: 4px;
+  animation: blockUp 0.9s ease-in-out infinite;
 }
-.spinner span:nth-child(1) { height: 20px; animation-delay: 0s;    background: #60a5fa; }
-.spinner span:nth-child(2) { height: 32px; animation-delay: 0.1s;  background: #3b82f6; }
-.spinner span:nth-child(3) { height: 44px; animation-delay: 0.2s;  background: #2563eb; }
-.spinner span:nth-child(4) { height: 32px; animation-delay: 0.3s;  background: #3b82f6; }
-.spinner span:nth-child(5) { height: 20px; animation-delay: 0.4s;  background: #60a5fa; }
+.spinner span:nth-child(1) { background: #93c5fd; animation-delay: 0.0s; }
+.spinner span:nth-child(2) { background: #60a5fa; animation-delay: 0.15s; }
+.spinner span:nth-child(3) { background: #3b82f6; animation-delay: 0.3s; }
+.spinner span:nth-child(4) { background: #60a5fa; animation-delay: 0.45s; }
+.spinner span:nth-child(5) { background: #93c5fd; animation-delay: 0.6s; }
 
-@keyframes blockBounce {
-  0%, 100% { transform: scaleY(0.5); opacity: 0.5; }
-  50%       { transform: scaleY(1);   opacity: 1; }
+@keyframes blockUp {
+  0%, 100% { height: 14px; opacity: 0.5; }
+  50%       { height: 46px; opacity: 1;   }
 }
 
 .loading-overlay p {
   color: #e2e8f0;
-  font-size: 0.9rem;
+  font-size: 0.88rem;
   font-weight: 600;
-  letter-spacing: 0.05em;
+  letter-spacing: 0.06em;
   margin: 0;
 }
 
@@ -279,6 +281,12 @@ td textarea { min-width: 140px; resize: vertical; }
 .rapor-nilai-table td:nth-child(3),
 .rapor-nilai-table td:nth-child(4),
 .rapor-nilai-table td:nth-child(5) { text-align: center; }
+.rapor-nilai-table .subheader-mulok td {
+  background: #e8ecf4;
+  font-weight: bold;
+  font-size: 9.5pt;
+  border-left: 4px solid #1e3a5f;
+}
 .rapor-ekskul-table { width: 100%; border-collapse: collapse; margin-bottom: 10px; font-size: 10pt; }
 .rapor-ekskul-table th, .rapor-ekskul-table td { border: 1px solid #000; padding: 4px 6px; }
 .rapor-ekskul-table th { background: #d0d8e8; text-align: center; }
