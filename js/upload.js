@@ -269,42 +269,80 @@ async function importXlsSiswa() {
 // TEMPLATE & UPLOAD NILAI
 // ═══════════════════════════════════════════════════════════
 
+// Helper: ambil daftar mapel yang boleh diedit user saat ini
+function getMapelBolehEdit() {
+  const mapelSemua  = nilaiData.mapel || [];
+  const mapelGuru   = nilaiData.mapelGuru || {};
+  const role        = currentUser?.role;
+  const username    = currentUser?.username;
+
+  if (role === 'admin' || role === 'walikelas') return mapelSemua;
+  // guruMapel: hanya mapel yang di-assign ke username ini
+  return mapelSemua.filter(m => mapelGuru[m] === username);
+}
+
 function downloadTemplateNilai() {
   const siswa = siswaCacheList;
-  const mapel = nilaiData.mapel || [];
-
   if (!siswa.length) {
     showToast('Muat data siswa terlebih dahulu!', 'error');
     return;
   }
 
-  const headers = ['Nama Siswa', ...mapel, 'Sakit', 'Ijin', 'Alpa'];
-  const rows = siswa.map(s => {
+  const role           = currentUser?.role;
+  const isWaliOrAdmin  = role === 'admin' || role === 'walikelas';
+  const mapelBoleh     = getMapelBolehEdit();
+
+  if (!mapelBoleh.length) {
+    showToast('Anda tidak memiliki mapel yang bisa diisi.', 'error');
+    return;
+  }
+
+  // Header: Nama Siswa + mapel yang boleh + (Sakit/Ijin/Alpa hanya wali/admin)
+  const headers = isWaliOrAdmin
+    ? ['Nama Siswa', ...mapelBoleh, 'Sakit', 'Ijin', 'Alpa']
+    : ['Nama Siswa', ...mapelBoleh];
+
+  // Isi baris dengan nilai yang sudah ada (agar tidak perlu isi ulang dari nol)
+  const mapelSemua = nilaiData.mapel || [];
+  const rows = siswa.map((s, si) => {
+    const nilaiSiswa = nilaiData.nilai[si] || {};
     const row = [s.nama];
-    mapel.forEach(() => row.push(''));
-    row.push('', '', '');
+    mapelBoleh.forEach(m => {
+      const mi = mapelSemua.indexOf(m);
+      row.push(mi >= 0 && nilaiSiswa[mi] !== undefined ? nilaiSiswa[mi] : '');
+    });
+    if (isWaliOrAdmin) {
+      row.push(nilaiSiswa['sakit'] || '', nilaiSiswa['ijin'] || '', nilaiSiswa['alpa'] || '');
+    }
     return row;
   });
 
-  // Lebar kolom: nama lebar, nilai sempit, kehadiran sempit
-  const lebar = [24, ...mapel.map(() => 10), 8, 8, 8];
+  const lebar = [24, ...mapelBoleh.map(() => 10), ...(isWaliOrAdmin ? [8, 8, 8] : [])];
   const wb = buatWorkbook('REKAP NILAI', headers, rows, lebar);
 
-  // Tambah sheet petunjuk
+  // Sheet petunjuk
+  const rombelId = getActiveRombelId('nilai');
   const petunjukData = [
     ['PETUNJUK PENGISIAN REKAP NILAI'],
     [''],
+    [`Rombel : ${rombelId}`],
+    [`Diisi oleh : ${currentUser?.nama || currentUser?.username} (${role})`],
+    [''],
     ['1. Isi nilai pada kolom mata pelajaran (0-100)'],
-    ['2. Isi Sakit, Ijin, Alpa dengan jumlah hari'],
+    ...(isWaliOrAdmin ? [['2. Isi Sakit, Ijin, Alpa dengan jumlah hari']] : []),
     ['3. Jangan mengubah nama siswa di kolom pertama'],
     ['4. Jangan menambah/menghapus kolom'],
     ['5. Simpan sebagai .xlsx lalu upload'],
+    [''],
+    ['KOLOM YANG BISA DIISI:'],
+    ...mapelBoleh.map(m => [`• ${m}`]),
+    ...(isWaliOrAdmin ? [['• Sakit, Ijin, Alpa']] : []),
   ];
   const wsPetunjuk = XLSX.utils.aoa_to_sheet(petunjukData);
-  wsPetunjuk['!cols'] = [{ wch: 50 }];
+  wsPetunjuk['!cols'] = [{ wch: 55 }];
   XLSX.utils.book_append_sheet(wb, wsPetunjuk, 'PETUNJUK');
 
-  unduhExcel(wb, 'template_nilai.xlsx');
+  unduhExcel(wb, `template_nilai_${rombelId}_${currentUser?.username || 'user'}.xlsx`);
   showToast('Template nilai diunduh!', 'success');
 }
 
@@ -328,29 +366,51 @@ function previewXlsNilai() {
         '<p style="color:#dc2626;">File tidak valid atau kosong.</p>';
       return;
     }
-    const header = rows[0].map(String);
-    const data   = rows.slice(1).filter(r => r[0]);
+    const header     = rows[0].map(String);
+    const data       = rows.slice(1).filter(r => r[0]);
+    const mapelBoleh = getMapelBolehEdit();
+    const isWaliOrAdmin = currentUser?.role === 'admin' || currentUser?.role === 'walikelas';
 
-    // header: ['Nama Siswa', 'Mapel1', ..., 'Sakit', 'Ijin', 'Alpa']
-    // 3 kolom terakhir = Sakit, Ijin, Alpa
-    const mapelCols = header.slice(1, header.length - 3);
-    const baseIdx   = mapelCols.length; // index mulai Sakit di data row (offset +1 karena kolom 0 = nama)
+    // Deteksi apakah file punya kolom Sakit/Ijin/Alpa (3 kolom terakhir)
+    const punya3Akhir = ['sakit','ijin','alpa'].some(k =>
+      header[header.length - 3]?.toLowerCase().includes('sakit') ||
+      header[header.length - 2]?.toLowerCase().includes('ijin') ||
+      header[header.length - 1]?.toLowerCase().includes('alpa')
+    );
+    const mapelCols  = punya3Akhir ? header.slice(1, header.length - 3) : header.slice(1);
 
     xlsNilaiParsed.mapel = mapelCols;
     xlsNilaiParsed.nilai = data.map(r => {
       const obj = { _nama: String(r[0] ?? '') };
       mapelCols.forEach((m, mi) => {
-        const v = r[mi + 1];
-        obj[mi] = (v !== '' && v !== null && v !== undefined) ? v : '';
+        // Hanya simpan nilai untuk mapel yang boleh diedit user ini
+        if (mapelBoleh.includes(m)) {
+          const v = r[mi + 1];
+          obj[mi] = (v !== '' && v !== null && v !== undefined) ? v : '';
+        }
+        // Mapel yang tidak boleh diedit: tandai sebagai skip
       });
-      obj['sakit'] = Number(r[baseIdx + 1]) || 0;
-      obj['ijin']  = Number(r[baseIdx + 2]) || 0;
-      obj['alpa']  = Number(r[baseIdx + 3]) || 0;
+      if (isWaliOrAdmin && punya3Akhir) {
+        const base = mapelCols.length;
+        obj['sakit'] = Number(r[base + 1]) || 0;
+        obj['ijin']  = Number(r[base + 2]) || 0;
+        obj['alpa']  = Number(r[base + 3]) || 0;
+      }
       return obj;
     });
 
+    // Validasi: cek apakah ada kolom yang tidak dikenali
+    const mapelTidakBoleh = mapelCols.filter(m => !mapelBoleh.includes(m));
+    let warningHtml = '';
+    if (mapelTidakBoleh.length) {
+      warningHtml = `<p style="color:#d97706;font-size:0.82rem;margin-top:6px;">
+        ⚠️ Kolom berikut tidak akan diimport (bukan mapel Anda): 
+        <strong>${mapelTidakBoleh.join(', ')}</strong>
+      </p>`;
+    }
+
     document.getElementById('xlsNilaiPreview').innerHTML =
-      renderPreviewTable(header, data.map(r => r.map(c => c ?? '')));
+      renderPreviewTable(header, data.map(r => r.map(c => c ?? ''))) + warningHtml;
     document.getElementById('btnImportNilai').disabled = xlsNilaiParsed.nilai.length === 0;
   });
 }
@@ -366,24 +426,48 @@ async function importXlsNilai() {
     return;
   }
 
+  const mapelBoleh  = getMapelBolehEdit();
+  const mapelSemua  = nilaiData.mapel || [];
+  const mapelCols   = xlsNilaiParsed.mapel;
+
   // Cocokkan berdasarkan nama (case-insensitive, trim)
   const nilaiByNama = {};
   xlsNilaiParsed.nilai.forEach(n => {
     nilaiByNama[n._nama.trim().toLowerCase()] = n;
   });
 
-  const nilaiMapped = siswa.map(s => {
-    return nilaiByNama[s.nama.trim().toLowerCase()] || {};
+  // Merge: ambil nilai lama, timpa hanya kolom yang boleh diedit
+  const nilaiMapped = siswa.map((s, si) => {
+    const fromFile  = nilaiByNama[s.nama.trim().toLowerCase()] || {};
+    const nilaiLama = nilaiData.nilai[si] || {};
+    const merged    = Object.assign({}, nilaiLama); // mulai dari nilai lama
+
+    mapelSemua.forEach((m, mi) => {
+      if (!mapelBoleh.includes(m)) return; // skip mapel yang bukan milik user
+      const idxFile = mapelCols.indexOf(m);
+      if (idxFile >= 0 && fromFile[idxFile] !== undefined) {
+        merged[mi] = fromFile[idxFile];
+      }
+    });
+
+    // Sakit/ijin/alpa hanya wali/admin
+    const isWaliOrAdmin = currentUser?.role === 'admin' || currentUser?.role === 'walikelas';
+    if (isWaliOrAdmin) {
+      if (fromFile['sakit'] !== undefined) merged['sakit'] = fromFile['sakit'];
+      if (fromFile['ijin']  !== undefined) merged['ijin']  = fromFile['ijin'];
+      if (fromFile['alpa']  !== undefined) merged['alpa']  = fromFile['alpa'];
+    }
+    return merged;
   });
 
-  nilaiData.mapel = xlsNilaiParsed.mapel;
+  // Update nilaiData di memori dengan hasil merge
   nilaiData.nilai = nilaiMapped;
 
   try {
     await API.post('saveNilai', {
       kelasId: rombelId,
-      mapel: JSON.stringify(nilaiData.mapel),
-      nilai: JSON.stringify(nilaiData.nilai)
+      mapel:   JSON.stringify(nilaiData.mapel),
+      nilai:   JSON.stringify(nilaiData.nilai)
     });
     closeModal('modalUploadNilai');
     showToast(`Nilai ${xlsNilaiParsed.nilai.length} siswa berhasil diimport!`, 'success');
