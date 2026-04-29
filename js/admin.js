@@ -173,6 +173,7 @@ function renderTabelRombel() {
 }
 
 let rombelMapelTemp = [];
+let rombelMapelGuruTemp = {}; // { "NamaMapel": "usernameGuru" }
 
 function modalRombel(idx) {
   const isEdit = idx !== undefined;
@@ -185,13 +186,15 @@ function modalRombel(idx) {
     document.getElementById('mr_id').disabled = true;
     document.getElementById('mr_nama').value = r.nama;
     document.getElementById('mr_wali').innerHTML = buildWaliOptions(r.wali || '');
-    rombelMapelTemp = [...r.mapel];
+    rombelMapelTemp      = [...r.mapel];
+    rombelMapelGuruTemp  = Object.assign({}, r.mapelGuru || {});
   } else {
     document.getElementById('mr_id_hidden').value = '';
     document.getElementById('mr_id').value = '';
     document.getElementById('mr_id').disabled = false;
     document.getElementById('mr_nama').value = '';
-    rombelMapelTemp = [];
+    rombelMapelTemp     = [];
+    rombelMapelGuruTemp = {};
   }
   document.getElementById('mr_mapelCustom').value = '';
   renderRefMapel();
@@ -240,19 +243,71 @@ function renderRombelMapelList() {
   const c = document.getElementById('rombelMapelList');
   const j = document.getElementById('mr_jumlah');
   if (j) j.textContent = rombelMapelTemp.length ? `(${rombelMapelTemp.length} mapel)` : '';
-  if (!rombelMapelTemp.length) { c.innerHTML='<p style="color:#888;font-size:0.83rem;padding:10px;text-align:center;">Belum ada mapel dipilih.</p>'; return; }
-  c.innerHTML = rombelMapelTemp.map((m,i) => `
+  if (!rombelMapelTemp.length) {
+    c.innerHTML = '<p style="color:#888;font-size:0.83rem;padding:10px;text-align:center;">Belum ada mapel dipilih.</p>';
+    return;
+  }
+
+  // Buat opsi guru: semua user role walikelas & guruMapel
+  const guruList = adminUserCache.filter(u => u.role === 'walikelas' || u.role === 'guruMapel');
+  const guruOptions = guruList.map(u =>
+    `<option value="${u.username}">${u.nama} (${u.role === 'walikelas' ? 'Wali' : 'Guru'})</option>`
+  ).join('');
+
+  c.innerHTML = rombelMapelTemp.map((m, i) => {
+    const guruTerpilih = rombelMapelGuruTemp[m] || '';
+    return `
     <div style="display:flex;gap:6px;align-items:center;background:#fff;padding:4px 6px;border-radius:4px;border:1px solid #e5e7eb;">
       <span style="color:#888;font-size:0.78rem;min-width:22px;">${i+1}.</span>
       <input type="text" value="${m}" onchange="updateMapelRombel(${i},this.value)"
         style="flex:1;padding:4px 7px;border:1px solid #d1d5db;border-radius:4px;font-size:0.83rem;"/>
+      <select onchange="updateGuruMapelRombel('${m.replace(/'/g,"\\'")}',this.value)"
+        style="padding:4px 6px;border:1px solid #d1d5db;border-radius:4px;font-size:0.78rem;min-width:130px;"
+        title="Guru pengampu mapel ini">
+        <option value="">— Guru —</option>
+        ${guruOptions}
+      </select>
       <button onclick="naikkMapelRombel(${i})" style="background:none;border:none;cursor:pointer;font-size:0.85rem;">⬆️</button>
       <button onclick="turunMapelRombel(${i})" style="background:none;border:none;cursor:pointer;font-size:0.85rem;">⬇️</button>
       <button onclick="hapusMapelRombel(${i})" style="background:#dc2626;color:#fff;border:none;border-radius:4px;padding:2px 7px;cursor:pointer;font-size:0.78rem;">✖</button>
-    </div>`).join('');
+    </div>`;
+  }).join('');
+
+  // Set nilai dropdown setelah render
+  rombelMapelTemp.forEach(m => {
+    const guruTerpilih = rombelMapelGuruTemp[m] || '';
+    if (!guruTerpilih) return;
+    // Cari select yang sesuai dan set value-nya
+    const selects = c.querySelectorAll('select');
+    selects.forEach((sel, i) => {
+      if (rombelMapelTemp[i] === m) sel.value = guruTerpilih;
+    });
+  });
 }
-function updateMapelRombel(i,val) { rombelMapelTemp[i]=val.trim(); renderRefMapel(); }
-function hapusMapelRombel(i) { rombelMapelTemp.splice(i,1); renderRefMapel(); renderRombelMapelList(); }
+function updateMapelRombel(i, val) {
+  const lama = rombelMapelTemp[i];
+  rombelMapelTemp[i] = val.trim();
+  // Pindahkan assignment guru jika nama mapel berubah
+  if (lama && lama !== val.trim() && rombelMapelGuruTemp[lama]) {
+    rombelMapelGuruTemp[val.trim()] = rombelMapelGuruTemp[lama];
+    delete rombelMapelGuruTemp[lama];
+  }
+  renderRefMapel();
+}
+
+function updateGuruMapelRombel(mapelNama, guruUsername) {
+  if (guruUsername) {
+    rombelMapelGuruTemp[mapelNama] = guruUsername;
+  } else {
+    delete rombelMapelGuruTemp[mapelNama];
+  }
+}
+function hapusMapelRombel(i) {
+  const nama = rombelMapelTemp[i];
+  rombelMapelTemp.splice(i, 1);
+  if (nama) delete rombelMapelGuruTemp[nama];
+  renderRefMapel(); renderRombelMapelList();
+}
 function naikkMapelRombel(i) { if(i>0){[rombelMapelTemp[i-1],rombelMapelTemp[i]]=[rombelMapelTemp[i],rombelMapelTemp[i-1]];renderRombelMapelList();} }
 function turunMapelRombel(i) { if(i<rombelMapelTemp.length-1){[rombelMapelTemp[i],rombelMapelTemp[i+1]]=[rombelMapelTemp[i+1],rombelMapelTemp[i]];renderRombelMapelList();} }
 
@@ -270,7 +325,7 @@ async function simpanRombel() {
   if (!nama) { showToast('Nama Rombel wajib!','error'); return; }
   if (!rombelMapelTemp.length) { showToast('Minimal 1 mapel!','error'); return; }
   try {
-    await API.post('saveRombel',{rombel:JSON.stringify({id,nama,wali,mapel:rombelMapelTemp})});
+    await API.post('saveRombel', { rombel: JSON.stringify({ id, nama, wali, mapel: rombelMapelTemp, mapelGuru: rombelMapelGuruTemp }) });
     closeModal('modalRombel');
     showToast(`Rombel "${nama}" disimpan!`,'success');
     await loadAdminData();
