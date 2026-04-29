@@ -40,7 +40,7 @@ function renderTabelSiswa(list) {
   const tbody = document.getElementById('bodySiswa');
   tbody.innerHTML = '';
   if (!list.length) {
-    tbody.innerHTML = '<tr><td colspan="10" class="hint">Belum ada data siswa.</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="9" class="hint">Belum ada data siswa.</td></tr>';
     return;
   }
   list.forEach((s, i) => {
