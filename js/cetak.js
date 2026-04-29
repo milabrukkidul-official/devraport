@@ -166,7 +166,7 @@ function renderRapor() {
   if (adaMulok) {
     nilaiRows += `<tr>
       <td colspan="6" style="background:#e8ecf4;font-weight:bold;font-size:9.5pt;
-        padding:3px 6px;border:1px solid #000;text-align:left;
+        font-style:italic;padding:3px 6px;border:1px solid #000;text-align:left;
         border-left:4px solid #1e3a5f;">
         Muatan Lokal
       </td>
