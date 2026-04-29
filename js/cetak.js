@@ -142,32 +142,37 @@ function renderRapor() {
   });
 
   // ===== HITUNG JUMLAH NILAI & RANGKING =====
-  // Jumlah nilai siswa ini
   let jumlahNilai = 0;
   let adaNilai = false;
-  mapel.forEach((m, mi) => {
+  mapel.forEach((_m, mi) => {
     const v = nilaiSiswa[mi] !== undefined && nilaiSiswa[mi] !== '' ? parseFloat(nilaiSiswa[mi]) : null;
     if (v !== null && !isNaN(v)) { jumlahNilai += v; adaNilai = true; }
   });
   const jumlahNilaiStr = adaNilai ? jumlahNilai : '-';
 
   // Rangking: hitung dari semua siswa di rombel
-  const jumlahSemuaSiswa = siswa.map((ss, ssi) => {
+  const jumlahSemuaSiswa = siswa.map((_ss, ssi) => {
     const nr = nilai[ssi] || {};
     let tot = 0; let ada = false;
-    mapel.forEach((m, mi) => {
+    mapel.forEach((_m, mi) => {
       const v = nr[mi] !== undefined && nr[mi] !== '' ? parseFloat(nr[mi]) : null;
       if (v !== null && !isNaN(v)) { tot += v; ada = true; }
     });
     return ada ? tot : -Infinity;
   });
-  const sorted = [...jumlahSemuaSiswa].sort((a, b) => b - a);
+  const sortedJml = [...jumlahSemuaSiswa].sort((a, b) => b - a);
   let rangkingSiswa = '-';
   if (adaNilai) {
-    // Dense ranking
-    const uniqueSorted = [...new Set(sorted.filter(v => v !== -Infinity))].sort((a, b) => b - a);
+    const uniqueSorted = [...new Set(sortedJml.filter(v => v !== -Infinity))].sort((a, b) => b - a);
     rangkingSiswa = uniqueSorted.indexOf(jumlahNilai) + 1;
   }
+
+  // Baris jumlah di bawah tabel nilai (di kolom Nilai)
+  const jumlahRow = `<tr style="font-weight:bold;background:#f0fdf4;">
+    <td colspan="3" style="text-align:right;font-style:italic;">Jumlah Nilai</td>
+    <td style="text-align:center;">${jumlahNilaiStr}</td>
+    <td colspan="2"></td>
+  </tr>`;
 
   // ===== EKSKUL (hanya yang terisi) =====
   let ekskulRows = '';
@@ -194,11 +199,10 @@ function renderRapor() {
   const tglRaporFmt = formatTanggal(setting.tglRapor);
   const tempatTgl   = [setting.tempatRapor, tglRaporFmt].filter(Boolean).join(', ');
 
-  // Huruf seksi (Catatan Wali Kelas dipindah sebelum Ketidakhadiran)
-  let sekIdx = adaEkskul ? 3 : 2; // B=Ekskul (jika ada), lalu Catatan, lalu Ketidakhadiran
+  // Huruf seksi
   const sekEkskul  = 'B';
-  const sekCatatan = adaEkskul ? 'C' : 'B';
-  const sekHadir   = adaEkskul ? 'D' : 'C';
+  const sekHadir   = adaEkskul ? 'C' : 'B';
+  const sekCatatan = adaEkskul ? 'D' : 'C';
 
   const html = `
   <div class="rapor-page">
@@ -223,21 +227,28 @@ function renderRapor() {
     </div>
 
     <div class="rapor-section-title">A. NILAI MATA PELAJARAN</div>
-    <table class="rapor-nilai-table">
-      <thead>
-        <tr>
-          <th style="width:32px;">No</th>
-          <th>Mata Pelajaran</th>
-          <th style="width:48px;">KKM</th>
-          <th style="width:48px;">Nilai</th>
-          <th style="width:60px;">Predikat</th>
-          <th>Deskripsi</th>
-        </tr>
-      </thead>
-      <tbody>
-        ${nilaiRows || '<tr><td colspan="6" style="text-align:center;">Belum ada data nilai</td></tr>'}
-      </tbody>
-    </table>
+    <div style="display:flex;align-items:flex-start;gap:12px;">
+      <table class="rapor-nilai-table" style="flex:1;">
+        <thead>
+          <tr>
+            <th style="width:32px;">No</th>
+            <th>Mata Pelajaran</th>
+            <th style="width:48px;">KKM</th>
+            <th style="width:48px;">Nilai</th>
+            <th style="width:60px;">Predikat</th>
+            <th>Deskripsi</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${nilaiRows || '<tr><td colspan="6" style="text-align:center;">Belum ada data nilai</td></tr>'}
+          ${jumlahRow}
+        </tbody>
+      </table>
+      <table class="rapor-rangking-table">
+        <thead><tr><th>Rangking</th></tr></thead>
+        <tbody><tr><td>${rangkingSiswa}</td></tr></tbody>
+      </table>
+    </div>
 
     ${adaEkskul ? `
     <div class="rapor-section-title">${sekEkskul}. EKSTRAKURIKULER</div>
@@ -250,27 +261,19 @@ function renderRapor() {
       <tbody>${ekskulRows}</tbody>
     </table>` : ''}
 
-    ${s.pesan ? `
-    <div class="rapor-section-title">${sekCatatan}. CATATAN WALI KELAS</div>
-    <div class="rapor-catatan">${s.pesan}</div>` : ''}
-
     <div class="rapor-section-title">${sekHadir}. KETIDAKHADIRAN</div>
     <table class="rapor-kehadiran-table">
-      <thead><tr>
-        <th>Jumlah Nilai</th>
-        <th>Rangking</th>
-        <th>Sakit</th>
-        <th>Ijin</th>
-        <th>Alpa</th>
-      </tr></thead>
+      <thead><tr><th>Sakit</th><th>Ijin</th><th>Alpa</th></tr></thead>
       <tbody><tr>
-        <td style="font-weight:bold;">${jumlahNilaiStr}</td>
-        <td style="font-weight:bold;">${rangkingSiswa}</td>
         <td>${sakit} hari</td>
         <td>${ijin} hari</td>
         <td>${alpa} hari</td>
       </tr></tbody>
     </table>
+
+    ${s.pesan ? `
+    <div class="rapor-section-title">${sekCatatan}. CATATAN WALI KELAS</div>
+    <div class="rapor-catatan">${s.pesan}</div>` : ''}
 
     <div class="rapor-tempat-tgl">${tempatTgl}</div>
 
