@@ -340,19 +340,20 @@ function saveSettingGlobal_(body) {
 
 // ============================================================
 // ROMBEL (Rombongan Belajar)
-// Sheet _ROMBEL: id | namaRombel | wali (username) | waliNama | mapelJSON
-// Rombel = grup belajar yang berisi daftar mata pelajaran
+// Sheet _ROMBEL: id | namaRombel | wali (username) | waliNama | mapelJSON | mapelGuruJSON
+// mapelGuruJSON = { "NamaMapel": "usernameGuru", ... }
 // ============================================================
 function getRombel_() {
   const sh   = getSheet(SH_ROMBEL);
   const data = sh.getDataRange().getValues();
   if (data.length <= 1) return { rombel: [] };
   const rombel = data.slice(1).map(r => ({
-    id:       String(r[0] || ''),
-    nama:     String(r[1] || ''),
-    wali:     String(r[2] || ''),
-    waliNama: String(r[3] || ''),
-    mapel:    r[4] ? JSON.parse(r[4]) : []
+    id:         String(r[0] || ''),
+    nama:       String(r[1] || ''),
+    wali:       String(r[2] || ''),
+    waliNama:   String(r[3] || ''),
+    mapel:      r[4] ? JSON.parse(r[4]) : [],
+    mapelGuru:  r[5] ? JSON.parse(r[5]) : {}
   })).filter(r => r.id);
   return { rombel };
 }
@@ -389,7 +390,7 @@ function saveRombel_(body) {
     if (waliLama && waliLama !== r.wali) updateRombelIdUser_(waliLama, '');
   }
   
-  const row = [r.id, r.nama, r.wali || '', waliNama, JSON.stringify(r.mapel || [])];
+  const row = [r.id, r.nama, r.wali || '', waliNama, JSON.stringify(r.mapel || []), JSON.stringify(r.mapelGuru || {})];
   if (found > 0) {
     sh.getRange(found, 1, 1, 5).setValues([row]);
     // Jika mapel berubah, update sheet nilai
@@ -595,25 +596,67 @@ function getNilai_(rombelId) {
     obj['alpa']  = row[base+2] || 0;
     return obj;
   });
-  return { mapel, siswa: siswaRes, nilai };
+
+  // Ambil mapelGuru dari data rombel
+  const { rombel } = getRombel_();
+  const rombelInfo = rombel.find(r => r.id === rombelId) || {};
+  const mapelGuru  = rombelInfo.mapelGuru || {};
+
+  return { mapel, siswa: siswaRes, nilai, mapelGuru };
 }
 
 function saveNilai_(body) {
-  const { kelasId } = body; // kelasId sebenarnya adalah rombelId
-  const mapel = JSON.parse(body.mapel);
-  const nilai = JSON.parse(body.nilai);
-  const siswa = getSiswa_(kelasId).siswa;
-  const sh    = getSheet(shName(kelasId, 'NILAI'));
+  const { kelasId } = body;
+  const mapel    = JSON.parse(body.mapel);
+  const nilaiNew = JSON.parse(body.nilai);
+  const siswa    = getSiswa_(kelasId).siswa;
+  const sh       = getSheet(shName(kelasId, 'NILAI'));
+
+  // Ambil nilai yang sudah ada (untuk merge — jaga nilai mapel lain)
+  const existing   = getNilai_(kelasId);
+  const nilaiLama  = existing.nilai || [];
+
+  // Cari user yang sedang menyimpan
+  const token = body.token || '';
+  const user  = verifyToken(token);
+
+  // Ambil mapelGuru dari rombel (untuk validasi per mapel)
+  const { rombel } = getRombel_();
+  const rombelInfo = rombel.find(r => r.id === kelasId) || {};
+  const mapelGuru  = rombelInfo.mapelGuru || {};
+
   sh.clearContents();
   const header = ['NAMA', ...mapel, 'sakit', 'ijin', 'alpa'];
   const rows   = [header];
+
   siswa.forEach((s, si) => {
-    const n   = nilai[si] || {};
-    const row = [s.nama];
-    mapel.forEach((m, mi) => row.push(n[mi] !== undefined ? n[mi] : ''));
-    row.push(n['sakit'] || 0, n['ijin'] || 0, n['alpa'] || 0);
+    const nNew  = nilaiNew[si] || {};
+    const nLama = nilaiLama[si] || {};
+    const row   = [s.nama];
+
+    mapel.forEach((m, mi) => {
+      // Cek apakah user boleh edit mapel ini
+      const guruMapel   = mapelGuru[m] || '';
+      const bolehEdit   = !user || user.role === 'admin'
+                          || user.role === 'walikelas'
+                          || guruMapel === user.username;
+      // Jika boleh edit, pakai nilai baru; jika tidak, pertahankan nilai lama
+      const val = bolehEdit
+        ? (nNew[mi] !== undefined ? nNew[mi] : '')
+        : (nLama[mi] !== undefined ? nLama[mi] : '');
+      row.push(val);
+    });
+
+    // Sakit/ijin/alpa: hanya wali kelas & admin yang boleh edit
+    const bolehKehadiran = !user || user.role === 'admin' || user.role === 'walikelas';
+    row.push(
+      bolehKehadiran ? (nNew['sakit'] || 0) : (nLama['sakit'] || 0),
+      bolehKehadiran ? (nNew['ijin']  || 0) : (nLama['ijin']  || 0),
+      bolehKehadiran ? (nNew['alpa']  || 0) : (nLama['alpa']  || 0)
+    );
     rows.push(row);
   });
+
   if (rows.length > 0) {
     sh.getRange(1, 1, rows.length, header.length).setValues(rows);
   }
