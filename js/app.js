@@ -24,12 +24,12 @@ function showPage(name) {
 
 function showLoading(show) {
   const el = document.getElementById('loadingOverlay');
+  if (!el) return;
   if (show) {
     el.classList.remove('hidden');
     el.classList.add('visible');
   } else {
     el.classList.remove('visible');
-    el.classList.add('hidden');
   }
 }
 
