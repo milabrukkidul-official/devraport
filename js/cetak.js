@@ -167,13 +167,14 @@ function renderRapor() {
     rangkingSiswa = uniqueSorted.indexOf(jumlahNilai) + 1;
   }
 
-  // Baris jumlah di bawah tabel nilai (di kolom Nilai), rangking di pojok kanan
+  // Baris jumlah di bawah tabel nilai (di kolom Nilai), rangking rata tengah di pojok kanan
   const jumlahRow = `<tr style="font-weight:bold;background:#f0fdf4;">
     <td colspan="3" style="text-align:right;font-style:italic;">Jumlah Nilai</td>
     <td style="text-align:center;">${jumlahNilaiStr}</td>
     <td style="text-align:center;"></td>
-    <td style="text-align:right;font-size:9pt;">
-      Rangking&nbsp;:&nbsp;<span style="font-size:11pt;">${rangkingSiswa}</span>
+    <td style="text-align:center;">
+      <div style="font-size:8.5pt;font-weight:normal;color:#555;">Rangking</div>
+      <div style="font-size:13pt;font-weight:bold;">${rangkingSiswa}</div>
     </td>
   </tr>`;
 
