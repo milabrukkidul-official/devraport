@@ -1,5 +1,37 @@
 // ===== APP CORE =====
 
+// ===== SIDEBAR TOGGLE =====
+const PAGE_TITLES = {
+  dashboard: 'Dashboard',
+  admin:     'Panel Admin',
+  setting:   'Setting Madrasah',
+  siswa:     'Data Siswa',
+  nilai:     'Rekap Nilai',
+  ekskul:    'Ekstrakurikuler',
+  kkm:       'KKM',
+  cetak:     'Cetak Rapor',
+  profil:    'Profil Saya',
+};
+
+function toggleSidebar() {
+  const sidebar  = document.getElementById('sidebar');
+  const wrapper  = document.querySelector('.app-wrapper');
+  const overlay  = document.getElementById('sidebarOverlay');
+  const isMobile = window.innerWidth <= 768;
+  if (isMobile) {
+    sidebar.classList.toggle('mobile-open');
+    overlay.classList.toggle('active');
+  } else {
+    sidebar.classList.toggle('collapsed');
+    wrapper.classList.toggle('sidebar-collapsed');
+  }
+}
+
+function closeSidebar() {
+  document.getElementById('sidebar').classList.remove('mobile-open');
+  document.getElementById('sidebarOverlay').classList.remove('active');
+}
+
 function showPage(name) {
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
   document.querySelectorAll('.nav-btn[data-page]').forEach(b => b.classList.remove('active'));
@@ -7,9 +39,18 @@ function showPage(name) {
   if (pg) pg.classList.add('active');
   const btn = document.querySelector(`.nav-btn[data-page="${name}"]`);
   if (btn) btn.classList.add('active');
-  
+
+  // Update judul topbar
+  const titleEl = document.getElementById('topbarTitle');
+  if (titleEl) titleEl.textContent = PAGE_TITLES[name] || name;
   // Auto-load data saat pindah halaman
-  if (name === 'siswa' && typeof loadSiswa === 'function') {
+  if (name === 'dashboard' && typeof loadDashboard === 'function') {
+    loadDashboard();
+  } else if (name === 'profil' && typeof loadProfil === 'function') {
+    loadProfil();
+  } else if (name === 'admin' && typeof loadAdminData === 'function') {
+    loadAdminData();
+  } else if (name === 'siswa' && typeof loadSiswa === 'function') {
     loadSiswa();
   } else if (name === 'nilai' && typeof loadNilai === 'function') {
     loadNilai();
