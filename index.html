@@ -122,14 +122,17 @@
       </div>
     </div>
 
-    <!-- Pengumuman dari Admin -->
-    <div id="dash-announcement" class="dash-announcement hidden"></div>
+    <!-- Pengumuman dari Admin (read-only untuk non-admin) -->
+    <div id="dash-announcement-feed" class="dash-ann-feed"></div>
 
-    <!-- Form Pengumuman (hanya admin) -->
+    <!-- Panel Buat/Edit Pengumuman (hanya admin) -->
     <div id="dash-announcement-editor" class="dash-section hidden">
-      <h3 class="dash-section-title">📢 Pengumuman</h3>
+      <div class="dash-section-title" style="display:flex;align-items:center;justify-content:space-between;">
+        <span>📢 Buat Pengumuman</span>
+      </div>
+      <input type="hidden" id="ann-edit-id"/>
       <div class="form-group" style="margin-bottom:10px;">
-        <label>Judul Pengumuman</label>
+        <label>Judul</label>
         <input type="text" id="ann-judul" placeholder="Contoh: Pengumpulan Nilai UTS"/>
       </div>
       <div class="form-group" style="margin-bottom:10px;">
@@ -140,7 +143,10 @@
         <label>URL Tautan (opsional)</label>
         <input type="url" id="ann-url" placeholder="https://..."/>
       </div>
-      <button class="btn-primary" onclick="saveAnnouncement()">💾 Simpan Pengumuman</button>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;">
+        <button class="btn-primary" onclick="submitAnnouncement()">💾 Posting</button>
+        <button class="btn-warning" id="ann-cancel-btn" onclick="cancelEditAnnouncement()" style="display:none;">✖ Batal Edit</button>
+      </div>
     </div>
 
   </div>
