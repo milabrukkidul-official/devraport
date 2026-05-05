@@ -56,7 +56,7 @@ function showMainApp() {
   document.getElementById('mainApp').classList.remove('hidden');
   buildNavbar();
   if (currentUser.role === 'admin') {
-    showPage('admin');
+    showPage('dashboard');
     const override = localStorage.getItem('gasUrl');
     const inp = document.getElementById('adminGasUrl');
     if (inp) inp.value = override || '';
@@ -70,11 +70,10 @@ function showMainApp() {
   } else if (currentUser.role === 'walikelas') {
     // Sembunyikan selector rombel untuk wali kelas
     hideRombelSelectorsForWaliKelas();
-    showPage('siswa');
-    loadSiswa();
+    showPage('dashboard');
   } else {
     // guruMapel — punya array kelas, tampilkan selector
-    showPage('nilai');
+    showPage('dashboard');
     buildGuruKelasSelector();
   }
 }
@@ -84,44 +83,51 @@ function buildNavbar() {
   nav.innerHTML = '';
   const { role, nama, rombelId } = currentUser;
 
+  const roleLabel = { admin: 'Administrator', walikelas: 'Wali Kelas', guruMapel: 'Guru Mapel' };
+
+  // Update info user di sidebar
+  const avatarEl = document.getElementById('sidebarAvatar');
+  const nameEl   = document.getElementById('sidebarUserName');
+  const roleEl   = document.getElementById('sidebarUserRole');
+  if (avatarEl) avatarEl.textContent = typeof getInitials === 'function' ? getInitials(nama) : nama.charAt(0).toUpperCase();
+  if (nameEl)   nameEl.textContent   = nama;
+  if (roleEl)   roleEl.textContent   = roleLabel[role] || role;
+
   const pages = [];
   if (role === 'admin') {
-    pages.push({ id: 'admin',   label: '🛠️ Admin' });
-    pages.push({ id: 'setting', label: '⚙️ Setting' });
-    pages.push({ id: 'siswa',   label: '👤 Siswa' });
-    pages.push({ id: 'nilai',   label: '📊 Nilai' });
-    pages.push({ id: 'ekskul',  label: '🏆 Ekskul' });
-    pages.push({ id: 'kkm',     label: '📌 KKM' });
-    pages.push({ id: 'cetak',   label: '🖨️ Cetak' });
+    pages.push({ id: 'dashboard', icon: '🏠', label: 'Dashboard' });
+    pages.push({ id: 'admin',     icon: '🛠️', label: 'Panel Admin' });
+    pages.push({ id: 'setting',   icon: '⚙️', label: 'Setting' });
+    pages.push({ id: 'siswa',     icon: '👤', label: 'Data Siswa' });
+    pages.push({ id: 'nilai',     icon: '📊', label: 'Rekap Nilai' });
+    pages.push({ id: 'ekskul',    icon: '🏆', label: 'Ekskul' });
+    pages.push({ id: 'kkm',       icon: '📌', label: 'KKM' });
+    pages.push({ id: 'cetak',     icon: '🖨️', label: 'Cetak Rapor' });
+    pages.push({ id: 'profil',    icon: '👤', label: 'Profil Saya' });
   } else if (role === 'walikelas') {
-    pages.push({ id: 'siswa',   label: '👤 Siswa' });
-    pages.push({ id: 'nilai',   label: '📊 Nilai' });
-    pages.push({ id: 'ekskul',  label: '🏆 Ekskul' });
-    pages.push({ id: 'cetak',   label: '🖨️ Cetak' });
+    pages.push({ id: 'dashboard', icon: '🏠', label: 'Dashboard' });
+    pages.push({ id: 'siswa',     icon: '👤', label: 'Data Siswa' });
+    pages.push({ id: 'nilai',     icon: '📊', label: 'Rekap Nilai' });
+    pages.push({ id: 'ekskul',    icon: '🏆', label: 'Ekskul' });
+    pages.push({ id: 'cetak',     icon: '🖨️', label: 'Cetak Rapor' });
+    pages.push({ id: 'profil',    icon: '👤', label: 'Profil Saya' });
   } else {
-    // guruMapel: hanya nilai
-    pages.push({ id: 'nilai', label: '📊 Nilai' });
+    pages.push({ id: 'dashboard', icon: '🏠', label: 'Dashboard' });
+    pages.push({ id: 'nilai',     icon: '📊', label: 'Rekap Nilai' });
+    pages.push({ id: 'profil',    icon: '👤', label: 'Profil Saya' });
   }
 
   pages.forEach(p => {
     const btn = document.createElement('button');
     btn.className = 'nav-btn';
     btn.dataset.page = p.id;
-    btn.textContent = p.label;
-    btn.onclick = () => showPage(p.id);
+    btn.innerHTML = `<span class="nav-btn-icon">${p.icon}</span><span class="sidebar-nav-label">${p.label}</span>`;
+    btn.onclick = () => {
+      showPage(p.id);
+      if (window.innerWidth <= 768) closeSidebar();
+    };
     nav.appendChild(btn);
   });
-
-  const roleLabel = { admin: 'Admin', walikelas: 'Wali Kelas', guruMapel: 'Guru Mapel' };
-  // Untuk guru mapel, rombelId adalah array — tampilkan jumlah rombel
-  let rombelInfo = '';
-  if (role === 'guruMapel' && Array.isArray(rombelId)) {
-    rombelInfo = rombelId.length ? ` — ${rombelId.length} rombel` : '';
-  } else if (rombelId) {
-    rombelInfo = ` — ${rombelId}`;
-  }
-  document.getElementById('navUserInfo').textContent =
-    `👤 ${nama} (${roleLabel[role] || role}${rombelInfo})`;
 }
 
 window.addEventListener('DOMContentLoaded', () => {
