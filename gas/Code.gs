@@ -195,7 +195,11 @@ function handleAction_(body) {
       
       // ── KKM write (admin only) ──
       case 'saveKKM':       return R(requireAdmin(body.token, () => saveKKM_(body)));
-      
+
+      // ── Pengumuman ──
+      case 'getAnnouncement':  return R(verifyToken(body.token) ? getAnnouncement_() : { error: 'Akses ditolak' });
+      case 'saveAnnouncement': return R(requireAdmin(body.token, () => saveAnnouncement_(body)));
+
       default:              return R({ error: 'Unknown action: ' + body.action });
     }
   } catch(err) { return R({ error: err.message }); }
@@ -751,6 +755,40 @@ function saveEkskul_(body) {
     rows.push(row);
   });
   if (rows.length > 0) sh.getRange(1, 1, rows.length, header.length).setValues(rows);
+  return { success: true };
+}
+
+// ============================================================
+// PENGUMUMAN (disimpan di _SETTING dengan prefix ann_)
+// ============================================================
+function getAnnouncement_() {
+  const sh   = getSheet(SH_SETTING);
+  const data = sh.getDataRange().getValues();
+  const ann  = { judul: '', isi: '', url: '' };
+  data.forEach(r => {
+    if (r[0] === 'ann_judul') ann.judul = String(r[1] || '');
+    if (r[0] === 'ann_isi')   ann.isi   = String(r[1] || '');
+    if (r[0] === 'ann_url')   ann.url   = String(r[1] || '');
+  });
+  return { announcement: ann };
+}
+
+function saveAnnouncement_(body) {
+  const ann = JSON.parse(body.announcement);
+  const sh  = getSheet(SH_SETTING);
+  const data = sh.getDataRange().getValues();
+  const keys = { ann_judul: ann.judul || '', ann_isi: ann.isi || '', ann_url: ann.url || '' };
+  // Update baris yang sudah ada, atau append jika belum ada
+  Object.entries(keys).forEach(([key, val]) => {
+    let found = false;
+    for (let i = 0; i < data.length; i++) {
+      if (String(data[i][0]) === key) {
+        sh.getRange(i + 1, 2).setValue(val);
+        found = true; break;
+      }
+    }
+    if (!found) sh.appendRow([key, val]);
+  });
   return { success: true };
 }
 
