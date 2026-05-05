@@ -106,13 +106,15 @@ function renderAnnCard(ann, isAdmin) {
       <button class="ann-btn-delete" onclick="deleteAnnouncement('${escHtml(ann.id)}')">🗑️ Hapus</button>
     </div>` : '';
 
+  const waktuFmt = formatWaktuAnn(ann.waktu);
+
   return `
     <div class="ann-card" id="ann-card-${escHtml(ann.id)}">
       <div class="ann-card-header">
         <span class="ann-card-icon">📢</span>
         <div class="ann-card-meta">
           <div class="ann-card-judul">${escHtml(ann.judul || 'Pengumuman')}</div>
-          <div class="ann-card-time">${escHtml(ann.waktu || '')}</div>
+          <div class="ann-card-time">🕐 ${waktuFmt}</div>
         </div>
         ${adminBtns}
       </div>
@@ -202,6 +204,21 @@ function escHtml(str) {
     .replace(/</g, '&lt;')
     .replace(/>/g, '&gt;')
     .replace(/"/g, '&quot;');
+}
+
+function formatWaktuAnn(iso) {
+  if (!iso) return '—';
+  try {
+    const d = new Date(iso);
+    if (isNaN(d)) return iso;
+    const bulan = ['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Agu','Sep','Okt','Nov','Des'];
+    const tgl  = d.getDate();
+    const bln  = bulan[d.getMonth()];
+    const thn  = d.getFullYear();
+    const jam  = String(d.getHours()).padStart(2, '0');
+    const mnt  = String(d.getMinutes()).padStart(2, '0');
+    return `${tgl} ${bln} ${thn}, ${jam}:${mnt}`;
+  } catch (e) { return iso; }
 }
 
 function setStatEl(id, val) {
