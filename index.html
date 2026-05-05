@@ -33,15 +33,182 @@
 <!-- ===== MAIN APP ===== -->
 <div id="mainApp" class="hidden">
 
-  <!-- NAVBAR -->
-  <nav class="navbar">
-    <div class="nav-brand">📋 Rapor Digital</div>
-    <div class="nav-links" id="navLinks"></div>
-    <div class="nav-user">
-      <span id="navUserInfo"></span>
-      <button class="nav-btn" onclick="doLogout()">🚪 Keluar</button>
+  <!-- OVERLAY (klik untuk tutup sidebar di mobile) -->
+  <div id="sidebarOverlay" class="sidebar-overlay" onclick="closeSidebar()"></div>
+
+  <!-- SIDEBAR -->
+  <aside id="sidebar" class="sidebar">
+    <div class="sidebar-brand">
+      <span class="sidebar-brand-icon">📋</span>
+      <span class="sidebar-brand-text">Rapor Digital</span>
     </div>
-  </nav>
+
+    <div class="sidebar-user">
+      <div class="sidebar-user-avatar" id="sidebarAvatar">?</div>
+      <div class="sidebar-user-info">
+        <div class="sidebar-user-name" id="sidebarUserName">—</div>
+        <div class="sidebar-user-role" id="sidebarUserRole">—</div>
+      </div>
+    </div>
+
+    <nav class="sidebar-nav" id="navLinks"></nav>
+
+    <div class="sidebar-footer">
+      <button class="sidebar-logout" onclick="doLogout()">
+        <span>🚪</span>
+        <span class="sidebar-nav-label">Keluar</span>
+      </button>
+    </div>
+  </aside>
+
+  <!-- APP WRAPPER: topbar + konten -->
+  <div class="app-wrapper">
+    <header class="topbar">
+      <button class="topbar-toggle" onclick="toggleSidebar()" title="Menu">
+        <span></span><span></span><span></span>
+      </button>
+      <span class="topbar-title" id="topbarTitle">Dashboard</span>
+    </header>
+
+    <main class="main-content">
+
+  <!-- ===== DASHBOARD ===== -->
+  <div id="page-dashboard" class="page">
+
+    <!-- Selamat datang + info user -->
+    <div class="dash-welcome">
+      <div id="dash-user-info" class="dash-user-info">
+        <div class="dash-avatar">?</div>
+        <div>
+          <div class="dash-user-name">Memuat...</div>
+          <div class="dash-user-role"></div>
+        </div>
+      </div>
+      <div class="dash-welcome-text">
+        <h2>Selamat Datang 👋</h2>
+        <p>Rapor Digital Tengah Semester — MI Labkid</p>
+      </div>
+    </div>
+
+    <!-- Kartu statistik -->
+    <div class="dash-stats">
+      <div class="dash-stat-card" id="dash-card-rombel">
+        <div class="dash-stat-icon">🏫</div>
+        <div class="dash-stat-body">
+          <div class="dash-stat-value" id="dash-stat-rombel">—</div>
+          <div class="dash-stat-label">Rombel</div>
+        </div>
+      </div>
+      <div class="dash-stat-card">
+        <div class="dash-stat-icon">👤</div>
+        <div class="dash-stat-body">
+          <div class="dash-stat-value" id="dash-stat-siswa">—</div>
+          <div class="dash-stat-label">Siswa</div>
+        </div>
+      </div>
+      <div class="dash-stat-card">
+        <div class="dash-stat-icon">📚</div>
+        <div class="dash-stat-body">
+          <div class="dash-stat-value" id="dash-stat-mapel">—</div>
+          <div class="dash-stat-label">Mata Pelajaran</div>
+        </div>
+      </div>
+      <div class="dash-stat-card" id="dash-card-user">
+        <div class="dash-stat-icon">👥</div>
+        <div class="dash-stat-body">
+          <div class="dash-stat-value" id="dash-stat-user">—</div>
+          <div class="dash-stat-label">Pengguna</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Daftar Rombel -->
+    <div class="dash-section">
+      <h3 class="dash-section-title">🏫 Rombel</h3>
+      <div id="dash-rombel-list" class="dash-rombel-list">
+        <p class="hint" style="padding:16px;">Memuat...</p>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ===== PROFIL USER ===== -->
+  <div id="page-profil" class="page">
+    <div class="page-header">
+      <h2>👤 Profil Saya</h2>
+    </div>
+
+    <div class="profil-layout">
+
+      <!-- Kartu identitas -->
+      <div class="profil-card profil-identity">
+        <div class="profil-avatar-wrap">
+          <div class="profil-avatar" id="profil-avatar">?</div>
+        </div>
+        <div class="profil-identity-info">
+          <div class="profil-field">
+            <span class="profil-field-label">Nama Lengkap</span>
+            <span class="profil-field-value" id="profil-nama-display">—</span>
+          </div>
+          <div class="profil-field">
+            <span class="profil-field-label">Username</span>
+            <span class="profil-field-value" id="profil-username-display">—</span>
+          </div>
+          <div class="profil-field">
+            <span class="profil-field-label">Role</span>
+            <span class="profil-field-value" id="profil-role-display">—</span>
+          </div>
+          <div class="profil-field">
+            <span class="profil-field-label">Rombel</span>
+            <span class="profil-field-value" id="profil-rombel-display">—</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Form edit nama -->
+      <div class="profil-card">
+        <h3 class="profil-card-title">✏️ Ubah Nama</h3>
+        <div class="form-group" style="margin-bottom:14px;">
+          <label>Nama Lengkap Baru</label>
+          <input type="text" id="profil-nama-input" placeholder="Masukkan nama lengkap"/>
+        </div>
+        <button class="btn-success" onclick="simpanNamaProfil()">💾 Simpan Nama</button>
+      </div>
+
+      <!-- Form ganti password -->
+      <div class="profil-card">
+        <h3 class="profil-card-title">🔑 Ganti Password</h3>
+
+        <div class="form-group" style="margin-bottom:12px;">
+          <label>Password Lama</label>
+          <div class="profil-pass-wrap">
+            <input type="password" id="profil-pass-lama" placeholder="Masukkan password lama"/>
+            <button class="profil-eye-btn" onclick="toggleProfilPass('profil-pass-lama','profil-eye-lama')" id="profil-eye-lama">👁️</button>
+          </div>
+        </div>
+
+        <div class="form-group" style="margin-bottom:12px;">
+          <label>Password Baru</label>
+          <div class="profil-pass-wrap">
+            <input type="password" id="profil-pass-baru" placeholder="Minimal 6 karakter"/>
+            <button class="profil-eye-btn" onclick="toggleProfilPass('profil-pass-baru','profil-eye-baru')" id="profil-eye-baru">👁️</button>
+          </div>
+        </div>
+
+        <div class="form-group" style="margin-bottom:12px;">
+          <label>Konfirmasi Password Baru</label>
+          <div class="profil-pass-wrap">
+            <input type="password" id="profil-pass-konfirm" placeholder="Ulangi password baru"/>
+            <button class="profil-eye-btn" onclick="toggleProfilPass('profil-pass-konfirm','profil-eye-konfirm')" id="profil-eye-konfirm">👁️</button>
+          </div>
+        </div>
+
+        <p id="profil-pass-error" class="login-error hidden" style="margin-bottom:10px;"></p>
+        <button class="btn-primary" onclick="simpanPasswordProfil()">🔑 Ubah Password</button>
+      </div>
+
+    </div>
+  </div>
 
   <!-- ===== HALAMAN ADMIN: KELOLA KELAS & USER ===== -->
   <div id="page-admin" class="page">
@@ -272,6 +439,9 @@
     <div id="raporPreview"></div>
   </div>
 
+    </main>
+  </div><!-- end .app-wrapper -->
+
 </div><!-- end #mainApp -->
 
 <!-- Modal User -->
@@ -481,5 +651,7 @@
 <script src="js/kkm.js"></script>
 <script src="js/cetak.js"></script>
 <script src="js/upload.js"></script>
+<script src="js/dashboard.js"></script>
+<script src="js/profil.js"></script>
 </body>
 </html>
