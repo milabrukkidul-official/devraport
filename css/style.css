@@ -575,33 +575,94 @@ td textarea { min-width: 140px; resize: vertical; }
 }
 
 /* ===== PENGUMUMAN DASHBOARD ===== */
-.dash-announcement {
+.dash-ann-feed {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+.ann-empty {
+  text-align: center;
+  color: #9ca3af;
+  font-size: 0.88rem;
+  padding: 24px 0;
+}
+
+/* Kartu pengumuman */
+.ann-card {
   background: #fff;
   border-radius: 12px;
   border-left: 4px solid #2563eb;
-  padding: 16px 20px;
-  margin-bottom: 16px;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.07);
+  padding: 14px 18px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+  transition: box-shadow 0.15s;
 }
-.dash-ann-header {
-  display: flex; align-items: flex-start; gap: 10px; margin-bottom: 8px;
+.ann-card:hover { box-shadow: 0 4px 14px rgba(0,0,0,0.1); }
+
+.ann-card-header {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  margin-bottom: 8px;
 }
-.dash-ann-icon { font-size: 1.2rem; flex-shrink: 0; margin-top: 1px; }
-.dash-ann-judul {
-  font-size: 0.95rem; font-weight: 700; color: #1e3a5f; line-height: 1.3;
+.ann-card-icon { font-size: 1.1rem; flex-shrink: 0; margin-top: 2px; }
+.ann-card-meta { flex: 1; min-width: 0; }
+.ann-card-judul {
+  font-size: 0.92rem;
+  font-weight: 700;
+  color: #1e3a5f;
+  line-height: 1.3;
+  word-break: break-word;
 }
-.dash-ann-isi {
-  font-size: 0.88rem; color: #374151; line-height: 1.6;
-  white-space: pre-wrap; word-break: break-word;
+.ann-card-time {
+  font-size: 0.72rem;
+  color: #9ca3af;
+  margin-top: 3px;
 }
-.dash-ann-link {
-  display: inline-flex; align-items: center; gap: 6px;
-  margin-top: 10px; padding: 6px 14px;
-  background: #2563eb; color: #fff;
-  border-radius: 6px; font-size: 0.82rem; font-weight: 600;
-  text-decoration: none; transition: opacity 0.15s;
+.ann-card-isi {
+  font-size: 0.86rem;
+  color: #374151;
+  line-height: 1.65;
+  white-space: pre-wrap;
+  word-break: break-word;
+  margin-bottom: 4px;
 }
-.dash-ann-link:hover { opacity: 0.85; color: #fff; }
+.ann-card-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  margin-top: 8px;
+  padding: 5px 12px;
+  background: #eff6ff;
+  color: #2563eb;
+  border: 1px solid #bfdbfe;
+  border-radius: 6px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  text-decoration: none;
+  transition: background 0.15s;
+}
+.ann-card-link:hover { background: #dbeafe; color: #1d4ed8; }
+
+/* Tombol aksi admin */
+.ann-card-actions {
+  display: flex;
+  gap: 6px;
+  flex-shrink: 0;
+  margin-left: auto;
+}
+.ann-btn-edit, .ann-btn-delete {
+  padding: 3px 9px;
+  border: none;
+  border-radius: 5px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: opacity 0.15s;
+}
+.ann-btn-edit   { background: #fef9c3; color: #92400e; }
+.ann-btn-delete { background: #fee2e2; color: #b91c1c; }
+.ann-btn-edit:hover, .ann-btn-delete:hover { opacity: 0.75; }
 /* Bottom layout */
 .dash-bottom { display: block; }
 
