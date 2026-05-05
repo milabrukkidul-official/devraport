@@ -211,13 +211,21 @@ function formatWaktuAnn(iso) {
   try {
     const d = new Date(iso);
     if (isNaN(d)) return iso;
-    const bulan = ['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Agu','Sep','Okt','Nov','Des'];
-    const tgl  = d.getDate();
-    const bln  = bulan[d.getMonth()];
-    const thn  = d.getFullYear();
-    const jam  = String(d.getHours()).padStart(2, '0');
-    const mnt  = String(d.getMinutes()).padStart(2, '0');
-    return `${tgl} ${bln} ${thn}, ${jam}:${mnt}`;
+
+    // Konversi UTC → WIB (UTC+7)
+    const wib = new Date(d.getTime() + 7 * 60 * 60 * 1000);
+
+    const bulan = [
+      'Januari','Februari','Maret','April','Mei','Juni',
+      'Juli','Agustus','September','Oktober','November','Desember'
+    ];
+    const tgl = String(wib.getUTCDate()).padStart(2, '0');
+    const bln = bulan[wib.getUTCMonth()];
+    const thn = wib.getUTCFullYear();
+    const jam = String(wib.getUTCHours()).padStart(2, '0');
+    const mnt = String(wib.getUTCMinutes()).padStart(2, '0');
+
+    return `${tgl} ${bln} ${thn} ${jam}.${mnt} WIB`;
   } catch (e) { return iso; }
 }
 
