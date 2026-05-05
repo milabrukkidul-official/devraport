@@ -197,8 +197,9 @@ function handleAction_(body) {
       case 'saveKKM':       return R(requireAdmin(body.token, () => saveKKM_(body)));
 
       // ── Pengumuman ──
-      case 'getAnnouncement':  return R(verifyToken(body.token) ? getAnnouncement_() : { error: 'Akses ditolak' });
-      case 'saveAnnouncement': return R(requireAdmin(body.token, () => saveAnnouncement_(body)));
+      case 'getAnnouncements':  return R(verifyToken(body.token) ? getAnnouncements_() : { error: 'Akses ditolak' });
+      case 'saveAnnouncement':  return R(requireAdmin(body.token, () => saveAnnouncement_(body)));
+      case 'deleteAnnouncement':return R(requireAdmin(body.token, () => deleteAnnouncement_(body)));
 
       default:              return R({ error: 'Unknown action: ' + body.action });
     }
@@ -759,37 +760,75 @@ function saveEkskul_(body) {
 }
 
 // ============================================================
-// PENGUMUMAN (disimpan di _SETTING dengan prefix ann_)
+// PENGUMUMAN — multi-post, tersimpan di sheet _ANNOUNCEMENTS
+// Kolom: id | judul | isi | url | waktu (ISO string)
 // ============================================================
-function getAnnouncement_() {
-  const sh   = getSheet(SH_SETTING);
+const SH_ANN = '_ANNOUNCEMENTS';
+
+function getAnnouncements_() {
+  const sh   = getSheet(SH_ANN);
   const data = sh.getDataRange().getValues();
-  const ann  = { judul: '', isi: '', url: '' };
-  data.forEach(r => {
-    if (r[0] === 'ann_judul') ann.judul = String(r[1] || '');
-    if (r[0] === 'ann_isi')   ann.isi   = String(r[1] || '');
-    if (r[0] === 'ann_url')   ann.url   = String(r[1] || '');
-  });
-  return { announcement: ann };
+  if (data.length < 2) return { announcements: [] };
+  // Urutkan terbaru di atas (sort by waktu desc)
+  const rows = data.slice(1)
+    .filter(r => r[0])
+    .map(r => ({
+      id:    String(r[0] || ''),
+      judul: String(r[1] || ''),
+      isi:   String(r[2] || ''),
+      url:   String(r[3] || ''),
+      waktu: String(r[4] || '')
+    }))
+    .sort((a, b) => (b.waktu > a.waktu ? 1 : -1));
+  return { announcements: rows };
 }
 
 function saveAnnouncement_(body) {
   const ann = JSON.parse(body.announcement);
-  const sh  = getSheet(SH_SETTING);
-  const data = sh.getDataRange().getValues();
-  const keys = { ann_judul: ann.judul || '', ann_isi: ann.isi || '', ann_url: ann.url || '' };
-  // Update baris yang sudah ada, atau append jika belum ada
-  Object.entries(keys).forEach(([key, val]) => {
-    let found = false;
-    for (let i = 0; i < data.length; i++) {
-      if (String(data[i][0]) === key) {
-        sh.getRange(i + 1, 2).setValue(val);
-        found = true; break;
+  const sh  = getSheet(SH_ANN);
+
+  // Pastikan header ada
+  if (sh.getLastRow() === 0) {
+    sh.appendRow(['id', 'judul', 'isi', 'url', 'waktu']);
+  }
+
+  const now = new Date().toISOString();
+
+  if (ann.id) {
+    // Edit: cari baris dengan id yang sama
+    const data = sh.getDataRange().getValues();
+    for (let i = 1; i < data.length; i++) {
+      if (String(data[i][0]) === ann.id) {
+        sh.getRange(i + 1, 1, 1, 5).setValues([[
+          ann.id,
+          ann.judul || '',
+          ann.isi   || '',
+          ann.url   || '',
+          data[i][4] // pertahankan waktu asli
+        ]]);
+        return { success: true };
       }
     }
-    if (!found) sh.appendRow([key, val]);
-  });
+  }
+
+  // Baru: buat id unik dari timestamp
+  const newId = 'ann_' + Date.now();
+  sh.appendRow([newId, ann.judul || '', ann.isi || '', ann.url || '', now]);
   return { success: true };
+}
+
+function deleteAnnouncement_(body) {
+  const id = body.id;
+  if (!id) return { error: 'ID tidak ditemukan.' };
+  const sh   = getSheet(SH_ANN);
+  const data = sh.getDataRange().getValues();
+  for (let i = data.length - 1; i >= 1; i--) {
+    if (String(data[i][0]) === id) {
+      sh.deleteRow(i + 1);
+      return { success: true };
+    }
+  }
+  return { error: 'Pengumuman tidak ditemukan.' };
 }
 
 // ============================================================
